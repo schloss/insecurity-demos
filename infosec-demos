@@ -1,0 +1,32 @@
+### Commented entries have reasonable defaults.
+### Uncomment to edit them.
+Section: misc
+Priority: optional
+# Homepage: <enter URL here; no default>
+Standards-Version: 3.6.2
+
+Package: infosec-demos
+Version: 0.1
+Maintainer: Smári McCarthy <smari@immi.is>
+# Pre-Depends: <comma-separated list of packages>
+Depends: python python-wxgtk2.8
+# Recommends: <comma-separated list of packages>
+# Suggests: <comma-separated list of packages>
+# Provides: <comma-separated list of packages>
+# Replaces: <comma-separated list of packages>
+Architecture: all
+#Copyright: COPYING
+#Changelog: CHANGES
+#Readme: README
+Extra-Files: #tutorials/*.pdf
+Files: demos/infosec /usr/bin
+ demos/infosec.py /usr/share/infosec
+ demos/panels/__init__.py /usr/share/infosec/panels
+ demos/panels/keylogger.py /usr/share/infosec/panels
+ demos/panels/packetsniffer.py /usr/share/infosec/panels
+ demos/panels/passwordcracker.py /usr/share/infosec/panels
+#  <more pairs, if there's more than one file to include. Notice the starting space>
+Description: Information security demos - contains tutorials and software.
+ long description and info
+ .
+ second paragraph
