@@ -25,6 +25,7 @@ Files: demos/infosec /usr/bin
  demos/panels/keylogger.py /usr/share/infosec/panels
  demos/panels/packetsniffer.py /usr/share/infosec/panels
  demos/panels/passwordcracker.py /usr/share/infosec/panels
+ demos/panels/mdnscapture.py /usr/share/infosec/panels
 #  <more pairs, if there's more than one file to include. Notice the starting space>
 Description: Information security demos - contains tutorials and software.
  long description and info
