@@ -1,0 +1,15 @@
+
+ * Password Cracking:
+	- Add brute force cracking
+	- Show something like kHash/s for brute force
+	- Add other cracking techniques?
+
+ * Device name capture:
+	------
+	airmon-ng start wlan0
+	tshark -n -T fields -e dns.qry.name -i wlan0 -R "udp.srcport == 5353"
+	------
+	- needs parsing
+	- needs panel
+	- faster way of getting device list
+

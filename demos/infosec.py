@@ -18,6 +18,7 @@ demos = [
 	('Intro', IntroPanel),
 	('Key logging', KeyLoggerPanel),
 	('Packet sniffing', PacketSnifferPanel),
+	('MDNS Capture', MDNSCapturePanel),
 	('Password cracking', PasswordCrackerPanel),
 ]
 
