@@ -8,8 +8,9 @@ Standards-Version: 3.6.2
 Package: infosec-demos
 Version: 0.1
 Maintainer: Smári McCarthy <smari@immi.is>
-# Pre-Depends: <comma-separated list of packages>
-Depends: python python-wxgtk2.8
+#Pre-Depends: <comma-separated list of packages>
+#Depends: <comma-separated list of packages>
+Depends: python, python-wxgtk2.8
 # Recommends: <comma-separated list of packages>
 # Suggests: <comma-separated list of packages>
 # Provides: <comma-separated list of packages>
@@ -18,7 +19,7 @@ Architecture: all
 #Copyright: COPYING
 #Changelog: CHANGES
 #Readme: README
-Extra-Files: #tutorials/*.pdf
+#Extra-Files: tutorials/*.pdf
 Files: demos/infosec /usr/bin
  demos/infosec.py /usr/share/infosec
  demos/panels/__init__.py /usr/share/infosec/panels
