@@ -8,7 +8,10 @@ import fcntl
 class MDNSCapturePanel(wx.Panel):
 	def __init__(self, parent):
 		wx.Panel.__init__(self, parent=parent)
-		self.btn_capture_toggle = wx.Button(self, -1, "Start capture", style=wx.BU_LEFT|wx.BU_TOP)
+		# self.btn_monitor_toggle = wx.Button(self, -1, "Monitor mode", style=wx.BU_LEFT|wx.BU_TOP)
+		# self.btn_monitor_toggle.Bind(wx.EVT_BUTTON, self.monitor_mode)
+
+		self.btn_capture_toggle = wx.Button(self, -1, "Start capture")
 		self.devices_list = wx.Choice(self, -1, choices=self.get_devices())
 		self.capture_list = wx.ListCtrl(self, -1, style=wx.LC_REPORT|wx.SUNKEN_BORDER)
 
@@ -20,6 +23,7 @@ class MDNSCapturePanel(wx.Panel):
 
 		sizer = wx.FlexGridSizer(2, 1, 0, 1)
 		sizer_toolbar = wx.BoxSizer(wx.HORIZONTAL)
+		# sizer_toolbar.Add(self.btn_monitor_toggle, 0, 0, 0)
 		sizer_toolbar.Add(self.btn_capture_toggle, 0, 0, 0)
 		sizer_toolbar.Add(wx.StaticText(self, -1, "Monitoring device:"), 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
 		sizer_toolbar.Add(self.devices_list, 0, 0, 0)
@@ -87,3 +91,6 @@ class MDNSCapturePanel(wx.Panel):
 		lines = subprocess.check_output("fakeroot airmon-ng | awk '{ print $1 }' | tail --lines=+5 | head --lines=-1", shell=True)
 		devs = lines.split()
 		return devs
+
+        def monitor_mode(self):
+                return foo
