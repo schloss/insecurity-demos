@@ -14,13 +14,10 @@ def enqueue_output(out, queue):
 	out.close()
 
 
-class MDNSCapturePanel(wx.Panel):
+class HTTPCapturePanel(wx.Panel):
 	def __init__(self, parent):
 		wx.Panel.__init__(self, parent=parent)
-		# self.btn_monitor_toggle = wx.Button(self, -1, "Monitor mode", style=wx.BU_LEFT|wx.BU_TOP)
-		# self.btn_monitor_toggle.Bind(wx.EVT_BUTTON, self.monitor_mode)
-
-		self.btn_capture_toggle = wx.Button(self, -1, "Start capture")
+		self.btn_capture_toggle = wx.Button(self, -1, "Start capture", style=wx.BU_LEFT|wx.BU_TOP)
 		self.devices_list = wx.Choice(self, -1, choices=self.get_devices())
 		self.capture_list = wx.ListCtrl(self, -1, style=wx.LC_REPORT|wx.SUNKEN_BORDER)
 
@@ -33,7 +30,6 @@ class MDNSCapturePanel(wx.Panel):
 
 		sizer = wx.FlexGridSizer(2, 1, 0, 1)
 		sizer_toolbar = wx.BoxSizer(wx.HORIZONTAL)
-		# sizer_toolbar.Add(self.btn_monitor_toggle, 0, 0, 0)
 		sizer_toolbar.Add(self.btn_capture_toggle, 0, 0, 0)
 		sizer_toolbar.Add(wx.StaticText(self, -1, "Monitoring device:"), 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
 		sizer_toolbar.Add(self.devices_list, 0, 0, 0)
@@ -43,10 +39,14 @@ class MDNSCapturePanel(wx.Panel):
 		sizer.AddGrowableCol(0)
 		sizer.AddGrowableRow(1)
 
-		self.capture_list.InsertColumn(0, 'Device')
-		self.capture_list.InsertColumn(1, 'Polling')
+		self.capture_list.InsertColumn(0, 'Method')
+		self.capture_list.InsertColumn(1, 'Domain')
+		self.capture_list.InsertColumn(2, 'URL')
+		self.capture_list.InsertColumn(3, 'Status')
 		self.capture_list.SetColumnWidth(0, 50)
-		self.capture_list.SetColumnWidth(1, 500)
+		self.capture_list.SetColumnWidth(1, 250)
+		self.capture_list.SetColumnWidth(2, 500)
+		self.capture_list.SetColumnWidth(3, 50)
 
 		self.Layout()
 
@@ -68,6 +68,8 @@ class MDNSCapturePanel(wx.Panel):
 
 			self.capture_list.InsertStringItem(self.index, fields[0])
 			self.capture_list.SetStringItem(self.index, 1, fields[1])
+			self.capture_list.SetStringItem(self.index, 2, fields[2])
+			self.capture_list.SetStringItem(self.index, 3, fields[3])
 			self.index += 1
 
 
@@ -91,7 +93,7 @@ class MDNSCapturePanel(wx.Panel):
 		#output.wait()
 		print "Starting tshark..."
 
-		self.tshark = subprocess.Popen("tshark -n -T fields -E separator=, -e eth.addr -e dns.qry.name -i %s -R 'udp.srcport == 5353' -l" % self.devname, 
+		self.tshark = subprocess.Popen("tshark -n -T fields -E separator=,  -e http.request.method -e http.host -e http.request.uri -e http.response.code -i %s -R 'http' -l" % self.devname, 
 			shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
 			stderr=subprocess.PIPE, close_fds=False, bufsize=10)
 
@@ -117,9 +119,6 @@ class MDNSCapturePanel(wx.Panel):
 
 	def get_devices(self):
 		# FIXME: Slow way of doing this.
-		lines = subprocess.check_output("fakeroot airmon-ng | awk '{ print $1 }' | tail --lines=+5 | head --lines=-1", shell=True)
+		lines = subprocess.check_output("airmon-ng | awk '{ print $1 }' | tail --lines=+5 | head --lines=-1", shell=True)
 		devs = lines.split()
 		return devs
-
-        def monitor_mode(self):
-                return foo
