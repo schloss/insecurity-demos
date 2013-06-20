@@ -20,8 +20,8 @@ demos = [
 	('Packet sniffing', PacketSnifferPanel),
 	('MDNS Capture 1', MDNSCapturePanel),
 	('MDNS Capture 2', MDNSMon0CapturePanel),
-	('HTTP Capture', HTTPCapturePanel),
-	('WLAN Probes', WLANProbesPanel),
+# 	('HTTP Capture', HTTPCapturePanel),       # Commented out to address un-added file(s)
+# 	('WLAN Probes', WLANProbesPanel),         # Commented out to address un-added file(s)
 	('Password cracking', PasswordCrackerPanel),
 ]
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 ### 
-# 
+# <description>
 ### 
 
 import wx
