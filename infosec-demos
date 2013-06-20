@@ -9,8 +9,7 @@ Package: infosec-demos
 Version: 2013062000
 Maintainer: Smári McCarthy <smari@immi.is>
 #Pre-Depends: <comma-separated list of packages>
-#Depends: <comma-separated list of packages>
-Depends: python, python-wxgtk2.8
+Depends: python, python-wxgtk2.8, gksu, aircrack-ng, tshark, wireshark
 # Recommends: <comma-separated list of packages>
 # Suggests: <comma-separated list of packages>
 # Provides: <comma-separated list of packages>
