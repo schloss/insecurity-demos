@@ -84,6 +84,6 @@ class MDNSCapturePanel(wx.Panel):
 
 	def get_devices(self):
 		# FIXME: Slow way of doing this.
-		lines = subprocess.check_output("airmon-ng | awk '{ print $1 }' | tail --lines=+5 | head --lines=-1", shell=True)
+		lines = subprocess.check_output("fakeroot airmon-ng | awk '{ print $1 }' | tail --lines=+5 | head --lines=-1", shell=True)
 		devs = lines.split()
 		return devs
