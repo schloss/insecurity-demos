@@ -27,6 +27,7 @@ Files: isecdem /usr/bin
  infosecdemos/panels/packetsniffer.py /usr/share
  infosecdemos/panels/passwordcracker.py /usr/share
  infosecdemos/panels/mdnscapture.py /usr/share
+ infosecdemos/panels/mdnsmon0capture.py /usr/share
 #  <more pairs, if there's more than one file to include. Notice the starting space>
 Description: Information security demos - contains tutorials and software.
  long description and info
