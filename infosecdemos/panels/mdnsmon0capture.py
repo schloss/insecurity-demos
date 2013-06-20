@@ -23,10 +23,11 @@ class MDNSMon0CapturePanel(wx.Panel):
 		self.Bind(wx.EVT_TIMER, self.update, self.timer)
 
 		self.tshark = None
-                self.monitor_mode = False
 
 		self.btn_capture_toggle.Bind(wx.EVT_BUTTON, self.toggle_capture)
 		self.btn_monitor_toggle.Bind(wx.EVT_BUTTON, self.toggle_monitor)
+                # TODO: bind capture_list change event to set btn_monitor_toggle text appropriately
+                self.devices_list.Bind(wx.EVT_CHOICE, self.interface_selected)
 
 		sizer = wx.FlexGridSizer(2, 1, 0, 1)
 		sizer_toolbar = wx.BoxSizer(wx.HORIZONTAL)
@@ -41,6 +42,10 @@ class MDNSMon0CapturePanel(wx.Panel):
 		sizer.AddGrowableRow(1)
 		self.Layout()
 
+                # Set monitor mode toggle button appropriately based on selected interface
+                self.devname = self.devices_list.GetItems()[self.devices_list.GetCurrentSelection()]
+                if self.devname[0:3] == "mon":
+                        self.btn_monitor_toggle.SetLabel("Stop monitor mode")
 
 	def update(self, event):
 		if not self.tshark:	# should be redundant, but let's be sure.
@@ -54,42 +59,43 @@ class MDNSMon0CapturePanel(wx.Panel):
 			except IOError, e:
 				break
 
+        def interface_selected(self, event):
+                self.devname = self.devices_list.GetItems()[self.devices_list.GetCurrentSelection()]
+                if self.devname[0:3] == "mon":
+                        self.btn_monitor_toggle.SetLabel("Stop monitor mode")
+                else:
+                        self.btn_monitor_toggle.SetLabel("Start monitor mode")
+                
+
         def toggle_monitor(self, event):
                 self.devname = self.devices_list.GetItems()[self.devices_list.GetCurrentSelection()]
-		if self.monitor_mode:
-                        if self.devname[0:3] == "mon":
-                                print "Stopping monitor mode on %s" % self.devname
-                                self.stop_monitor_mode(event)
-                                self.btn_monitor_toggle.SetLabel("Start monitor mode")
-                        else:
-                                print "%s does not appear to be a monitor mode interface" % self.devname
-		else:
-                        if self.devname[0:3] != "mon":
+                if self.devname[0:3] == "mon":
+                        print "Stopping monitor mode on %s" % self.devname
+                        self.stop_monitor_mode(event)
+                        self.btn_monitor_toggle.SetLabel("Select interface")
+                else:
+                        if self.devname[0:3]:
                                 print "Starting monitor mode on %s" % self.devname
                                 self.start_monitor_mode(event)
-                                self.btn_monitor_toggle.SetLabel("Stop monitor mode")
-                        else:
-                                print "%s already appears to be a monitor mode interface" % self.devname
+                                self.btn_monitor_toggle.SetLabel("Select interface")
+                # If no interface is selected, do nothing
+                # TODO: handle other possible interface names (ethX, wifiX, etc.)
 
         def start_monitor_mode(self, event=None):
 		self.devname = self.devices_list.GetItems()[self.devices_list.GetCurrentSelection()]
 		lines = subprocess.check_output("gksudo airmon-ng start %s" % self.devname, shell=True)
                 # print lines   # DEBUG
 		self.devices_list.SetItems(self.get_devices())
-
                 ### TODO: refresh devices_list (or select "most recent" device?)
-
-                self.monitor_mode = True
+        
 
         def stop_monitor_mode(self, event=None):
 		self.devname = self.devices_list.GetItems()[self.devices_list.GetCurrentSelection()]
  		lines = subprocess.check_output("gksudo airmon-ng stop %s" % self.devname, shell=True)
                 # print lines   # DEBUG
 		self.devices_list.SetItems(self.get_devices())
-
                 ### TODO: refresh devices_list (or select "least recent" device?)
-
-                self.monitor_mode = False
+                self.btn_monitor_toggle.SetLabel("Select interface")
 
 	def toggle_capture(self, event):
 		if self.tshark:
