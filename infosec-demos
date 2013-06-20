@@ -20,13 +20,13 @@ Architecture: all
 #Changelog: CHANGES
 #Readme: README
 #Extra-Files: tutorials/*.pdf
-Files: demos/infosec /usr/bin
- demos/infosec.py /usr/share/infosec
- demos/panels/__init__.py /usr/share/infosec/panels
- demos/panels/keylogger.py /usr/share/infosec/panels
- demos/panels/packetsniffer.py /usr/share/infosec/panels
- demos/panels/passwordcracker.py /usr/share/infosec/panels
- demos/panels/mdnscapture.py /usr/share/infosec/panels
+Files: isecdem /usr/bin
+ infosecdemos/isecdem.py /usr/share
+ infosecdemos/panels/__init__.py /usr/share
+ infosecdemos/panels/keylogger.py /usr/share
+ infosecdemos/panels/packetsniffer.py /usr/share
+ infosecdemos/panels/passwordcracker.py /usr/share
+ infosecdemos/panels/mdnscapture.py /usr/share
 #  <more pairs, if there's more than one file to include. Notice the starting space>
 Description: Information security demos - contains tutorials and software.
  long description and info
