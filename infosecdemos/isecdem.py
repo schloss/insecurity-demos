@@ -20,6 +20,8 @@ demos = [
 	('Packet sniffing', PacketSnifferPanel),
 	('MDNS Capture 1', MDNSCapturePanel),
 	('MDNS Capture 2', MDNSMon0CapturePanel),
+	('HTTP Capture', HTTPCapturePanel),
+	('WLAN Probes', WLANProbesPanel),
 	('Password cracking', PasswordCrackerPanel),
 ]
 
