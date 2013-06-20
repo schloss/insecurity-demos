@@ -6,7 +6,7 @@ Priority: optional
 Standards-Version: 3.6.2
 
 Package: infosec-demos
-Version: 0.1
+Version: 2013062000
 Maintainer: Smári McCarthy <smari@immi.is>
 #Pre-Depends: <comma-separated list of packages>
 #Depends: <comma-separated list of packages>
