@@ -1,7 +1,4 @@
-#!/usr/bin/env python
-
 from tsharkpanel import GenericTSharkPanel
-
 
 class HTTPCapturePanel(GenericTSharkPanel):
 	def __init__(self, parent):
@@ -10,3 +7,4 @@ class HTTPCapturePanel(GenericTSharkPanel):
 		self.addfield("Domain", 250)
 		self.addfield("URL", 500)
 		self.addfield("Status", 50)
+
