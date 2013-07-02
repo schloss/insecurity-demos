@@ -43,9 +43,12 @@ class MDNSMon0CapturePanel(wx.Panel):
 		self.Layout()
 
                 # Set monitor mode toggle button appropriately based on selected interface
-                self.devname = self.devices_list.GetItems()[self.devices_list.GetCurrentSelection()]
-                if self.devname[0:3] == "mon":
-                        self.btn_monitor_toggle.SetLabel("Stop monitor mode")
+                try:
+	                self.devname = self.devices_list.GetItems()[self.devices_list.GetCurrentSelection()]
+	                if self.devname[0:3] == "mon":
+                                self.btn_monitor_toggle.SetLabel("Stop monitor mode")
+                except:
+                        pass
 
 	def update(self, event):
 		if not self.tshark:	# should be redundant, but let's be sure.
