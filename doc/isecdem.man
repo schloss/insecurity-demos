@@ -1,0 +1,26 @@
+.TH ISECDEM 1 LOCAL
+
+.SH NAME
+
+isecdem - run various information security demos
+
+.SH SYNOPSIS
+
+.B isecdem 
+
+.SH AVAILABILITY
+
+Linux
+
+.SH DESCRIPTION
+
+wxGTK based information security demo suite. Provides simple front end to 
+various sniffing, scanning and cracking tools for the benefit of novice
+users trying to understand how information security works without the added
+complexity of advanced UIs.
+
+.SH AUTHORS
+
+ Smári McCarthy
+ Chris Walker
+ Samir Nassar
