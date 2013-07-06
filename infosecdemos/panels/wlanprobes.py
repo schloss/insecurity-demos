@@ -16,3 +16,18 @@ class WLANProbesPanel(GenericTSharkPanel):
 		
 		item = self.capture_list.GetItem(selected)
 		print item
+
+
+	def update_line(self, fields):
+		ind = self.capture_list.FindItem(-1, fields[0], False)
+		if ind != -1:
+			old = self.capture_list.GetItem(ind, 1)
+			new = [x.strip() for x in old.GetText().split(",")]
+			new.append(fields[1])
+			new = ", ".join(set(new))
+			self.capture_list.SetStringItem(ind, 1, new)
+		else:
+			self.capture_list.InsertStringItem(self.index, fields[0])
+			self.capture_list.SetStringItem(self.index, 1, fields[1])
+			self.index += 1
+
