@@ -36,3 +36,6 @@ nosetests.xml
 
 # Debian packages
 *.deb
+
+# Backup files
+*.*~

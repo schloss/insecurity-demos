@@ -5,6 +5,7 @@ import fcntl
 import sys
 from threading import Thread
 from Queue import Queue, Empty
+from util import get_wireless_devices
 
 def enqueue_output(out, queue):
     for line in iter(out.readline, b''):
@@ -18,7 +19,7 @@ class GenericTSharkPanel(wx.Panel):
                                             -1,
                                             "Start capture",
                                             style=wx.BU_LEFT | wx.BU_TOP)
-        self.devices_list = wx.Choice(self, -1, choices=self.get_devices())
+        self.devices_list = wx.Choice(self, -1, choices=get_wireless_devices())
         self.capture_list = wx.ListCtrl(self,
                                         -1,
                                         style=wx.LC_REPORT | wx.SUNKEN_BORDER)
@@ -138,11 +139,3 @@ class GenericTSharkPanel(wx.Panel):
         #                          shell=True,
         #                          close_fds=True)
         #output.wait()
-
-    def get_devices(self):
-        # FIXME: Slow way of doing this.
-        lines = subprocess.check_output("airmon-ng | awk '{ print $1 }' | \
-                                        tail --lines=+5 | head --lines=-1",
-                                        shell=True)
-        devs = lines.split()
-        return devs

@@ -5,6 +5,7 @@ import fcntl
 import sys
 from threading import Thread
 from Queue import Queue, Empty
+from util import get_wireless_devices
 
 def enqueue_output(out, queue):
     for line in iter(out.readline, b''):
@@ -22,7 +23,7 @@ class MDNSCapturePanel(wx.Panel):
         # self.btn_monitor_toggle.Bind(wx.EVT_BUTTON, self.monitor_mode)
 
         self.btn_capture_toggle = wx.Button(self, -1, "Start capture")
-        self.devices_list = wx.Choice(self, -1, choices=self.get_devices())
+        self.devices_list = wx.Choice(self, -1, choices=get_wireless_devices())
         self.capture_list = wx.ListCtrl(self,
                                         -1,
                                         style=wx.LC_REPORT | wx.SUNKEN_BORDER)
@@ -129,17 +130,3 @@ class MDNSCapturePanel(wx.Panel):
         #                          shell=True,
         #                          close_fds=True)
         #output.wait()
-
-
-    def get_devices(self):
-        # FIXME: Slow way of doing this.
-        lines = subprocess.check_output("fakeroot airmon-ng | \
-                                         awk '{ print $1 }' | \
-                                         tail --lines=+5 | \
-                                         head --lines=-1",
-                                        shell=True)
-        devs = lines.split()
-        return devs
-
-        def monitor_mode(self):
-            return foo

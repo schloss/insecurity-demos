@@ -2,6 +2,7 @@ import wx
 import os
 import subprocess
 import fcntl
+from util import get_wireless_devices
 
 class MDNSMon0CapturePanel(wx.Panel):
     def __init__(self, parent):
@@ -13,7 +14,7 @@ class MDNSMon0CapturePanel(wx.Panel):
 
         self.btn_capture_toggle = wx.Button(self, -1, "Start capture")
 
-        self.devices_list = wx.Choice(self, -1, choices=self.get_devices())
+        self.devices_list = wx.Choice(self, -1, choices=get_wireless_devices())
         self.capture_list = wx.ListCtrl(self,
                                         -1,
                                         style=wx.LC_REPORT | wx.SUNKEN_BORDER)
@@ -48,12 +49,16 @@ class MDNSMon0CapturePanel(wx.Panel):
         # Set monitor mode toggle button appropriately based on
         # selected interface
         try:
-            device_index = self.devices_list.GetCurrentSelection()
-            self.devname = self.devices_list.GetItems()[device_index]
-            if self.devname[0:3] == "mon":
+            devname = self.current_device()
+            if devname[0:3] == "mon":
                 self.btn_monitor_toggle.SetLabel("Stop monitor mode")
         except:
             pass
+
+    def current_device(self):
+        # Returns the current device name as a string.
+        device_index = self.devices_list.GetCurrentSelection()
+        return self.devices_list.GetItems()[device_index]
 
     def update(self, event):
         if not self.tshark: # should be redundant, but let's be sure.
@@ -68,46 +73,42 @@ class MDNSMon0CapturePanel(wx.Panel):
                 break
 
     def interface_selected(self, event):
-        device_index = self.devices_list.GetCurrentSelection()
-        self.devname = self.devices_list.GetItems()[device_index]
-        if self.devname[0:3] == "mon":
+        devname = self.current_device()
+        if devname[0:3] == "mon":
             self.btn_monitor_toggle.SetLabel("Stop monitor mode")
         else:
             self.btn_monitor_toggle.SetLabel("Start monitor mode")
 
     def toggle_monitor(self, event):
-        device_index = self.devices_list.GetCurrentSelection()
-        self.devname = self.devices_list.GetItems()[device_index]
-        if self.devname[0:3] == "mon":
-            print "Stopping monitor mode on %s" % self.devname
+        devname = self.current_device()
+        if devname[0:3] == "mon":
+            print "Stopping monitor mode on %s" % devname
             self.stop_monitor_mode(event)
             self.btn_monitor_toggle.SetLabel("Select interface")
         else:
-            if self.devname[0:3]:
-                print "Starting monitor mode on %s" % self.devname
+            if devname[0:3]:
+                print "Starting monitor mode on %s" % devname
                 self.start_monitor_mode(event)
                 self.btn_monitor_toggle.SetLabel("Select interface")
         # If no interface is selected, do nothing
         # TODO: handle other possible interface names (ethX, wifiX, etc.)
 
     def start_monitor_mode(self, event=None):
-        device_index = self.devices_list.GetCurrentSelection()
-        self.devname = self.devices_list.GetItems()[device_index]
+        devname = self.current_device()
         lines = subprocess.check_output("gksudo airmon-ng start %s" % \
-                                        self.devname,
+                                        devname,
                                         shell=True)
         # print lines   # DEBUG
-        self.devices_list.SetItems(self.get_devices())
+        self.devices_list.SetItems(get_wireless_devices())
         ### TODO: refresh devices_list (or select "most recent" device?)
 
     def stop_monitor_mode(self, event=None):
-        device_index = self.devices_list.GetCurrentSelection()
-        self.devname = self.devices_list.GetItems()[device_index]
+        devname = self.current_device()
         lines = subprocess.check_output("gksudo airmon-ng stop %s" % \
-                                        self.devname,
+                                        devname,
                                         shell=True)
         # print lines   # DEBUG
-        self.devices_list.SetItems(self.get_devices())
+        self.devices_list.SetItems(get_wireless_devices())
         ### TODO: refresh devices_list (or select "least recent" device?)
         self.btn_monitor_toggle.SetLabel("Select interface")
 
@@ -122,11 +123,10 @@ class MDNSMon0CapturePanel(wx.Panel):
             self.btn_capture_toggle.SetLabel("Stop capture")
 
     def start_capture(self, event=None):
-        device_index = self.devices_list.GetCurrentSelection()
-        self.devname = self.devices_list.GetItems()[device_index]
+        devname = self.current_device()
         print "Starting airmon-ng..."
         output = subprocess.Popen("gksudo airmon-ng start %s" % \
-                                  self.devname,
+                                  devname,
                                   shell=True,
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE,
@@ -135,7 +135,7 @@ class MDNSMon0CapturePanel(wx.Panel):
         print "Starting tshark..."
         #self.tshark = subprocess.Popen("gksudo tshark -n -T fields \
         #                               -e dns.qry.name -i %s \
-        #                               -R 'udp.srcport == 5353'" % self.devname,
+        #                               -R 'udp.srcport == 5353'" % devname,
         #                               shell=True,
         #                               stdin=subprocess.PIPE,
         #                               stdout=subprocess.PIPE,
@@ -144,7 +144,7 @@ class MDNSMon0CapturePanel(wx.Panel):
 
         self.tshark = subprocess.Popen("gksudo tshark -n -T fields \
                                        -e http.host -i %s \
-                                       -R 'http'" % self.devname,
+                                       -R 'http'" % devname,
                                        shell=True,
                                        stdin=subprocess.PIPE,
                                        stdout=subprocess.PIPE,
@@ -161,17 +161,7 @@ class MDNSMon0CapturePanel(wx.Panel):
         self.tshark.terminate()
         self.tshark = None
 
-        output = subprocess.Popen("gksudo airmon-ng stop %s" % self.devname,
+        output = subprocess.Popen("gksudo airmon-ng stop %s" % devname,
                                   shell=True,
                                   close_fds=True)
         output.wait()
-
-    def get_devices(self):
-        # FIXME: Slow way of doing this.
-        lines = subprocess.check_output("fakeroot airmon-ng | \
-                                        awk '{ print $1 }' | \
-                                        tail --lines=+5 | \
-                                        head --lines=-1",
-                                        shell=True)
-        devs = lines.split()
-        return devs
