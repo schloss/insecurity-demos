@@ -1,15 +1,13 @@
 import wx
-
-from hashlib import md5, sha1, sha224, sha256, sha384, sha512
+import hashlib
 import random
 
 hashes = {
-    "MD5": md5,
-    "SHA1": sha1,
-    "SHA256": sha256,
-    "SHA512": sha512,
+    "MD5": hashlib.md5,
+    "SHA1": hashlib.sha1,
+    "SHA256": hashlib.sha256,
+    "SHA512": hashlib.sha512,
 }
-
 
 class PasswordCrackerPanel(wx.Panel):
     def __init__(self, parent):
@@ -87,4 +85,4 @@ class PasswordCrackerPanel(wx.Panel):
             self.hash_entry.SetValue(hashname+"$"+salt+"$"+h.hexdigest())
 
     def password_crack(self, event):
-        pass
+        print "XXX : Need to implement password_crack"
