@@ -18,57 +18,64 @@ class IntroPanel(wx.Panel):
         sizer.Add(self.text_ctrl_1, wx.EXPAND, wx.EXPAND, 0)
         self.SetSizer(sizer)
 
-firstdemo = "Intro"
-demos = [
-    ('Intro', IntroPanel),
-    ('Key logging', KeyLoggerPanel),
-    ('Packet sniffing', PacketSnifferPanel),
-    ('MDNS Capture 1', MDNSCapturePanel),
-    ('MDNS Capture 2', MDNSMon0CapturePanel),
-    ('HTTP Capture', HTTPCapturePanel),
-    ('WLAN Probes', WLANProbesPanel),
-    ('Password cracking', PasswordCrackerPanel),
-]
-
 class InfoSecMainWindow(wx.Frame):
-    def __init__(self, *args, **kwds):
-        self.demos = {}
-
-        kwds["style"] = wx.DEFAULT_FRAME_STYLE
-        kwds["size"] = (550, 400)
-        kwds["parent"] = None
-        wx.Frame.__init__(self, *args, **kwds)
+    def __init__(self, demos, default_demo):
+        # Set basic parameters and call super.
+        wx.Frame.__init__(self,
+                          style = wx.DEFAULT_FRAME_STYLE,
+                          size = (550, 400),
+                          parent = None)
         self.SetTitle("Information Security Threat Demos")
         self.SetMinSize((500,350))
 
-        self.demolist = wx.ListBox(self, -1, choices=[x[0] for x in demos])
-
+        # Instantiate the demo list.
+        ordered_demos = zip(*demos)[0]
+        self.demolist = wx.ListBox(self, -1, choices=ordered_demos)
+        self.demolist.Bind(wx.EVT_LISTBOX, self.__select_demo)
         sizer_1 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_1.Add(self.demolist, 0, wx.EXPAND, 0)
 
-        for i in dict(demos).keys():
-            self.demos[i] = dict(demos)[i](self)
-            sizer_1.Add(self.demos[i], 1, wx.EXPAND, 0)
-            self.demos[i].Hide()
+        # Instantiate all demo panels.
+        self.demos = {}
+        for demo_name, demo_class in demos:
+            demo = demo_class(self)
+            self.demos[demo_name] = demo
+            sizer_1.Add(demo, 1, wx.EXPAND, 0)
+            demo.Hide()
 
-        self.curdemo = firstdemo
-        self.demos[self.curdemo].Show()
-        self.demolist.SetSelection(self.demolist.Items.index(self.curdemo))
+        # Set the default demo.
+        self.current_demo = default_demo
+        self.demos[self.current_demo].Show()
+        self.demolist.SetSelection(self.demolist.Items.index(self.current_demo))
 
-        self.demolist.Bind(wx.EVT_LISTBOX, self.select_demo)
-
+        # Final layout.
         self.SetSizer(sizer_1)
         sizer_1.Fit(self)
         self.Layout()
 
-    def select_demo(self, event):
-        self.demos[self.curdemo].Hide()
-        self.curdemo = self.demolist.Items[event.Selection]
-        self.demos[self.curdemo].Show()
+    def __select_demo(self, event):
+        self.demos[self.current_demo].Hide()
+        self.current_demo = self.demolist.Items[event.Selection]
+        self.demos[self.current_demo].Show()
         self.Layout()
 
 if __name__ == "__main__":
+
+    # Configuration parameters.
+    default_demo = "Intro"
+    demos = [
+        ('Intro', IntroPanel),
+        ('Key logging', KeyLoggerPanel),
+        ('Packet sniffing', PacketSnifferPanel),
+        ('MDNS Capture 1', MDNSCapturePanel),
+        ('MDNS Capture 2', MDNSMon0CapturePanel),
+        ('HTTP Capture', HTTPCapturePanel),
+        ('WLAN Probes', WLANProbesPanel),
+        ('Password cracking', PasswordCrackerPanel),
+    ]
+
+    # Initialization.
     app = wx.App(redirect=False)
-    top = InfoSecMainWindow()
+    top = InfoSecMainWindow(demos, default_demo)
     top.Show()
     app.MainLoop()
