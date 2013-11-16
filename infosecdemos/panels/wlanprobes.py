@@ -2,11 +2,13 @@ import wx
 from tsharkpanel import GenericTSharkPanel
 
 class WLANProbesPanel(GenericTSharkPanel):
+
+    FIELDS = ('wlan.sa',
+              'wlan_mgt.ssid subtype probereq',)
+    READ_FILTER = 'wlan.fc.type_subtype eq 4'
+
     def __init__(self, parent):
-        GenericTSharkPanel.__init__(self,
-                                    parent,
-                                    "-R 'wlan.fc.type_subtype eq 4' -e wlan.sa \
-                                    -e wlan_mgt.ssid subtype probereq")
+        GenericTSharkPanel.__init__(self, parent)
         self.addfield("Device", 80)
         self.addfield("Polling", 600)
         # self.capture_list.Bind(wx.wxEVT_LEFT_DCLICK, self.showdetails)
@@ -32,3 +34,9 @@ class WLANProbesPanel(GenericTSharkPanel):
             self.capture_list.InsertStringItem(self.index, fields[0])
             self.capture_list.SetStringItem(self.index, 1, fields[1])
             self.index += 1
+
+    def get_fields(self):
+        return WLANProbesPanel.FIELDS
+
+    def get_read_filter(self):
+        return WLANProbesPanel.READ_FILTER

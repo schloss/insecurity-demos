@@ -6,7 +6,7 @@ Priority: optional
 Standards-Version: 3.6.2
 
 Package: infosec-demos
-Version: 2013111600
+Version: 2013111800
 Maintainer: Smári McCarthy <smari@immi.is>
 #Pre-Depends: <comma-separated list of packages>
 Depends: python, python-wxgtk2.8, gksu, aircrack-ng, tshark, wireshark
@@ -22,6 +22,7 @@ Architecture: all
 Files: isecdem /usr/bin
  infosecdemos/isecdem.py /usr/share
  infosecdemos/util.py /usr/share
+ infosecdemos/tshark.py /usr/share
  infosecdemos/panels/__init__.py /usr/share
  infosecdemos/panels/keylogger.py /usr/share
  infosecdemos/panels/packetsniffer.py /usr/share

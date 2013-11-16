@@ -1,11 +1,7 @@
 import wx
-import os
-import subprocess
-import fcntl
-import sys
-from threading import Thread
-from Queue import Queue, Empty
+import Queue
 from util import get_wireless_devices
+import tshark
 
 def enqueue_output(out, queue):
     for line in iter(out.readline, b''):
@@ -13,7 +9,8 @@ def enqueue_output(out, queue):
     out.close()
 
 class GenericTSharkPanel(wx.Panel):
-    def __init__(self, parent, tsharkargs):
+    def __init__(self, parent, is_in_monitor_mode=False):
+        self.is_in_monitor_mode = is_in_monitor_mode
         wx.Panel.__init__(self, parent=parent)
         self.btn_capture_toggle = wx.Button(self,
                                             -1,
@@ -28,7 +25,6 @@ class GenericTSharkPanel(wx.Panel):
         self.Bind(wx.EVT_TIMER, self.update, self.timer)
         self.tshark = None
         self.index = 0
-        self.tsharkargs = tsharkargs
         self.fields = []
 
         self.btn_capture_toggle.Bind(wx.EVT_BUTTON, self.toggle_capture)
@@ -49,7 +45,6 @@ class GenericTSharkPanel(wx.Panel):
 
         self.Layout()
 
-
     def addfield(self, fieldname, length=None):
         self.fields.append(fieldname)
         self.capture_list.InsertColumn(len(self.fields), fieldname)
@@ -59,26 +54,16 @@ class GenericTSharkPanel(wx.Panel):
 
 
     def update(self, event):
-        if not self.tshark: # should be redundant, but let's be sure.
-            return
-
-        if len(self.fields) == 0:
-            return
-
-        while True:
-            try:  line = self.queue.get_nowait()
-            except Empty:
-                pids = os.popen("pidof tshark").read()
+        while self.tshark and len(self.fields) > 0:
+            try:
+                line = self.tshark.queue.get_nowait()
+            except Queue.Empty:
                 break
 
             line = line.strip()
-
             fields = line.split(",")
-            if fields[0] == "":
-                continue
-
-            self.update_line(fields)
-
+            if fields[0]:
+                self.update_line(fields)
 
     def update_line(self, fields):
         self.capture_list.InsertStringItem(self.index, fields[0])
@@ -90,52 +75,33 @@ class GenericTSharkPanel(wx.Panel):
 
     def toggle_capture(self, event):
         if self.tshark:
-            print "Stopping capture..."
             self.stop_capture(event)
             self.btn_capture_toggle.SetLabel("Start capture")
         else:
-            print "Starting capture..."
             self.start_capture(event)
             self.btn_capture_toggle.SetLabel("Stop capture")
 
+    def get_device(self):
+        device_index = self.devices_list.GetCurrentSelection()
+        return self.devices_list.GetItems()[device_index]
+
+    def get_fields(self):
+        """To be overridden."""
+        return None
+
+    def get_read_filter(self):
+        """To be overridden."""
+        return None
 
     def start_capture(self, event=None):
-        device_index = self.devices_list.GetCurrentSelection()
-        self.devname = self.devices_list.GetItems()[device_index]
-        print "Starting airmon-ng..."
-        #output = subprocess.Popen("airmon-ng start %s" % self.devname,
-        #                          shell=True,
-        #                          stdout=subprocess.PIPE,
-        #                          stderr=subprocess.PIPE,
-        #                          close_fds=True)
-        #output.wait()
-        cmd = "tshark -n -T fields -E separator=, -l -i %s %s" % \
-              (self.devname, self.tsharkargs)
-        print "Starting tshark... [%s]" % (cmd)
-        self.tshark = subprocess.Popen(cmd,
-                                       shell=True,
-                                       stdin=subprocess.PIPE,
-                                       stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE,
-                                       close_fds=False,
-                                       bufsize=500)
-
-        self.queue = Queue()
-        self.queuethread = Thread(target=enqueue_output,
-                                  args=(self.tshark.stdout, self.queue))
-
-        self.queuethread.daemon = True
-        self.queuethread.start()
-
+        self.tshark = tshark.TShark(interface=self.get_device(),
+                                    fields=self.get_fields(),
+                                    separator=',',
+                                    read_filter=self.get_read_filter())
+        self.tshark.start_capture()
         self.timer.Start(500)
 
     def stop_capture(self, event=None):
         self.timer.Stop()
-        self.tshark.terminate()
-        self.tshark.kill()
+        self.tshark.stop_capture()
         self.tshark = None
-
-        #output = subprocess.Popen("airmon-ng stop %s" % self.devname,
-        #                          shell=True,
-        #                          close_fds=True)
-        #output.wait()
