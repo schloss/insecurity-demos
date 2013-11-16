@@ -29,6 +29,7 @@ Files: isecdem /usr/bin
  infosecdemos/panels/mdnsmon0capture.py /usr/share
  infosecdemos/panels/wlanprobes.py /usr/share
  infosecdemos/panels/httpcapture.py /usr/share
+ infosecdemos/panels/tsharkpanel.py /usr/share
  man/man1/isecdem.1 /usr/share
 #  <more pairs, if there's more than one file to include. Notice the starting space>
 Description: Information security demos - contains tutorials and software.
