@@ -27,6 +27,7 @@ class InfoSecMainWindow(wx.Frame):
                           parent = None)
         self.SetTitle("Information Security Threat Demos")
         self.SetMinSize((500,350))
+        self.Bind(wx.EVT_WINDOW_DESTROY, self.__quit)
 
         # Instantiate the demo list.
         ordered_demos = zip(*demos)[0]
@@ -58,6 +59,9 @@ class InfoSecMainWindow(wx.Frame):
         self.current_demo = self.demolist.Items[event.Selection]
         self.demos[self.current_demo].Show()
         self.Layout()
+
+    def __quit(self, event):
+        self.demolist.Unbind(wx.EVT_LISTBOX, handler=self.__select_demo)
 
 if __name__ == "__main__":
 
