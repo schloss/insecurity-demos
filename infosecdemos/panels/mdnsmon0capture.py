@@ -2,7 +2,7 @@ import wx
 import os
 import subprocess
 import fcntl
-from util import get_wireless_devices
+import wlan
 
 class MDNSMon0CapturePanel(wx.Panel):
     def __init__(self, parent):
@@ -14,7 +14,8 @@ class MDNSMon0CapturePanel(wx.Panel):
 
         self.btn_capture_toggle = wx.Button(self, -1, "Start capture")
 
-        self.devices_list = wx.Choice(self, -1, choices=get_wireless_devices())
+        interface_names = map(str, wlan.enumerate())
+        self.devices_list = wx.Choice(self, -1, choices=interface_names)
         self.capture_list = wx.ListCtrl(self,
                                         -1,
                                         style=wx.LC_REPORT | wx.SUNKEN_BORDER)

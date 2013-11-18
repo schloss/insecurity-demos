@@ -21,7 +21,7 @@ Architecture: all
 #Extra-Files: tutorials/*.pdf
 Files: isecdem /usr/bin
  infosecdemos/isecdem.py /usr/share
- infosecdemos/util.py /usr/share
+ infosecdemos/wlan.py /usr/share
  infosecdemos/tshark.py /usr/share
  infosecdemos/panels/__init__.py /usr/share
  infosecdemos/panels/keylogger.py /usr/share

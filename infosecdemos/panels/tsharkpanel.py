@@ -1,6 +1,6 @@
 import wx
 import Queue
-from util import get_wireless_devices
+import wlan
 import tshark
 
 def enqueue_output(out, queue):
@@ -16,7 +16,8 @@ class GenericTSharkPanel(wx.Panel):
                                             -1,
                                             "Start capture",
                                             style=wx.BU_LEFT | wx.BU_TOP)
-        self.devices_list = wx.Choice(self, -1, choices=get_wireless_devices())
+        interface_names = map(str, wlan.enumerate())
+        self.devices_list = wx.Choice(self, -1, choices=interface_names)
         self.capture_list = wx.ListCtrl(self,
                                         -1,
                                         style=wx.LC_REPORT | wx.SUNKEN_BORDER)
