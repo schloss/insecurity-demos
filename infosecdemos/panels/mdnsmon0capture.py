@@ -14,7 +14,7 @@ class MDNSMon0CapturePanel(wx.Panel):
 
         self.btn_capture_toggle = wx.Button(self, -1, "Start capture")
 
-        interface_names = map(str, wlan.enumerate())
+        interface_names = map(str, wlan.enumerate_interfaces())
         self.devices_list = wx.Choice(self, -1, choices=interface_names)
         self.capture_list = wx.ListCtrl(self,
                                         -1,
@@ -100,7 +100,7 @@ class MDNSMon0CapturePanel(wx.Panel):
                                         devname,
                                         shell=True)
         # print lines   # DEBUG
-        self.devices_list.SetItems(get_wireless_devices())
+        self.devices_list.SetItems(map(str, wlan.enumerate_interfaces()))
         ### TODO: refresh devices_list (or select "most recent" device?)
 
     def stop_monitor_mode(self, event=None):
@@ -109,7 +109,7 @@ class MDNSMon0CapturePanel(wx.Panel):
                                         devname,
                                         shell=True)
         # print lines   # DEBUG
-        self.devices_list.SetItems(get_wireless_devices())
+        self.devices_list.SetItems(map(str, wlan.enumerate_interfaces()))
         ### TODO: refresh devices_list (or select "least recent" device?)
         self.btn_monitor_toggle.SetLabel("Select interface")
 

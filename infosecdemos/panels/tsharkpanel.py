@@ -16,7 +16,7 @@ class GenericTSharkPanel(wx.Panel):
                                             -1,
                                             "Start capture",
                                             style=wx.BU_LEFT | wx.BU_TOP)
-        interface_names = map(str, wlan.enumerate())
+        interface_names = map(str, wlan.enumerate_interfaces())
         self.devices_list = wx.Choice(self, -1, choices=interface_names)
         self.capture_list = wx.ListCtrl(self,
                                         -1,
