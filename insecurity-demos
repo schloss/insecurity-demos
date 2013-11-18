@@ -1,0 +1,39 @@
+### Commented entries have reasonable defaults.
+### Uncomment to edit them.
+Section: misc
+Priority: optional
+Homepage: https://github.com/schloss/insecurity-demos
+Standards-Version: 3.6.2
+
+Package: insecurity-demos
+Version: 2013111801
+Maintainer: schloss-admin@googlegroups.com
+#Pre-Depends: <comma-separated list of packages>
+Depends: python, python-wxgtk2.8, gksu, aircrack-ng, tshark, wireshark
+# Recommends: <comma-separated list of packages>
+# Suggests: <comma-separated list of packages>
+# Provides: <comma-separated list of packages>
+# Replaces: <comma-separated list of packages>
+Architecture: all
+#Copyright: COPYING
+#Changelog: CHANGES
+#Readme: README
+#Extra-Files: tutorials/*.pdf
+Files: insecdem /usr/bin
+ insecuritydemos/insecdem.py /usr/share
+ insecuritydemos/wlan.py /usr/share
+ insecuritydemos/tshark.py /usr/share
+ insecuritydemos/panels/__init__.py /usr/share
+ insecuritydemos/panels/keylogger.py /usr/share
+ insecuritydemos/panels/packetsniffer.py /usr/share
+ insecuritydemos/panels/passwordcracker.py /usr/share
+ insecuritydemos/panels/mdnscapture.py /usr/share
+ insecuritydemos/panels/mdnsmon0capture.py /usr/share
+ insecuritydemos/panels/wlanprobes.py /usr/share
+ insecuritydemos/panels/httpcapture.py /usr/share
+ insecuritydemos/panels/tsharkpanel.py /usr/share
+ man/man1/insecdem.1 /usr/share
+Description: Digital security demos - contains tutorials and software.
+ long description and info
+ .
+ second paragraph

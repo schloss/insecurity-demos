@@ -1,6 +1,6 @@
 
 all:
-	equivs-build infosec-demos
+	equivs-build insecurity-demos
 	lintian *.deb
 	
 

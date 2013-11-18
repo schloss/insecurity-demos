@@ -1,14 +1,15 @@
-infosec-demos
+insecurity-demos
 =============
 
-Infosec-demos is a simple debian package that provides tutorials and "canned" digital (in)security demonstrations to help trainers explain and demystify a handful of specific threats. It is intended for standalone functionality.
+A packaged, graphical user interface for demonstrating various digital
+security threats and mitigations. It is intended for standalone
+functionality in a training room context.
 
 Installation:
 * sudo apt-get install equivs
-* cd infosec-demos
+* cd insecurity-demos
 * make
-* sudo dpkg -i infosec-demos_<version>_all.deb
+* sudo dpkg -i insecurity-demos_<version>_all.deb
 
 Execution:
-* isecdem
-
+* insecdem
