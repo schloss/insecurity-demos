@@ -7,7 +7,7 @@ Standards-Version: 3.6.2
 
 Package: insecurity-demos
 Version: 2013111801
-Maintainer: schloss-admin@googlegroups.com
+Maintainer: Schloss <schloss-admin@googlegroups.com>
 #Pre-Depends: <comma-separated list of packages>
 Depends: python, python-wxgtk2.8, gksu, aircrack-ng, tshark, wireshark
 # Recommends: <comma-separated list of packages>
