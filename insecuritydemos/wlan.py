@@ -1,13 +1,55 @@
 import subprocess
 import string
 
+def enumerate_networks(interface):
+    """Returns a list of all wireless networks found by the given interface."""
+    if not interface:
+        return None
+    interface = str(interface)
+    cmd = "iwlist %s scan" % interface
+    output = subprocess.check_output(cmd, shell=True)
+    assert(output.split('\n')[0].replace(' ','') ==
+           ("%sScancompleted:" % interface))
+    networks = networks_from_iwlist(output)
+    return networks
+
 def enumerate_interfaces():
-    """Returns a list of instances of all wireless devices."""
+    """Returns a list of all wireless networking interfaces found on
+    the local host."""
     # XXX : perhaps use iwconfig, which seems faster than airmon-ng for listing
     cmd = "fakeroot airmon-ng"
     output = subprocess.check_output(cmd, shell=True)
     interfaces = interfaces_from_airmon_ng(output)
     return interfaces
+
+def networks_from_iwlist(blob):
+    offset = blob.index("Scan completed :")
+    cells = blob.split('\n' + offset*' ' + 'Cell')[1:]
+    networks = []
+    for cell in cells:
+        if not cell:
+            continue
+        lines = cell.split('\n')
+        lines[0] = lines[0].split(' - ')[1] # Remove cell number.
+        essid = None
+        bssid = None
+        channel = None
+        security = []
+        for line in lines:
+            line = line.strip(string.whitespace)
+            if line.startswith("Address:"):
+                bssid = line[len("Address:"):].strip(string.whitespace)
+            elif line.startswith("ESSID:"):
+                essid = line[len("ESSID:"):].strip(string.whitespace + '"')
+            elif line.startswith("Channel:"):
+                channel = line[len("Channel:"):].strip(string.whitespace)
+            elif line.startswith("IE:"):
+                sec = line[len("IE:"):].strip(string.whitespace)
+                if not sec.startswith("Unknown:"):
+                    security.append(sec)
+        if essid:
+            networks.append(Network(essid, bssid, channel, security))
+    return networks
 
 def interfaces_from_airmon_ng(blob):
     blocks = map(lambda x: x.strip(), blob.split('\n\n'))
@@ -25,7 +67,7 @@ def interfaces_from_airmon_ng(blob):
         lines = entry.split('\n')
         args = map(lambda x: x.strip(), lines[0].strip().split('\t'))
         args = filter(None, args)
-        interface = WLAN(*args)
+        interface = Interface(*args)
         if len(lines) > 1:
             extra = lines[1].strip(string.whitespace + '()')
             if extra.startswith('monitor mode enabled on'):
@@ -33,7 +75,7 @@ def interfaces_from_airmon_ng(blob):
         interfaces.append(interface)
     return interfaces
 
-class WLAN():
+class Interface():
 
     def __init__(self,
                  interface_name,
@@ -73,3 +115,18 @@ class WLAN():
         if self.monitor_mode:
             out.append('monitor mode on: %s' % self.monitor_mode)
         return '\n'.join(out)
+
+class Network():
+
+    def __init__(self,
+                 essid,
+                 bssid=None,
+                 channel=None,
+                 security=None):
+        self.essid = essid
+        self.bssid = bssid
+        self.channel = channel
+        self.security = security
+
+    def __str__(self):
+        return "%s (%s)" % (self.essid, self.bssid)
