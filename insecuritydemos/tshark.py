@@ -45,7 +45,7 @@ class TShark(subprocess.Popen):
                                   stdin=subprocess.PIPE,
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE,
-                                  close_fds=False,
+                                  close_fds=True,
                                   bufsize=500)
         self.queue = Queue()
         self.queue_thread = Thread(target=_enqueue_output,

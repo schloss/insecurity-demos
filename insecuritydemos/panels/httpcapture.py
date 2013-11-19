@@ -2,6 +2,8 @@ from tsharkpanel import GenericTSharkPanel
 
 class HTTPCapturePanel(GenericTSharkPanel):
 
+    title = "Pages Visited"
+    monitor_mode = False
     FIELDS = ('http.request.method',
               'http.host',
               'http.request.uri',

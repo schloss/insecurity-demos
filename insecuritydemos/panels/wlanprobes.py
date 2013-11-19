@@ -3,6 +3,7 @@ from tsharkpanel import GenericTSharkPanel
 
 class WLANProbesPanel(GenericTSharkPanel):
 
+    title = "Wifi History"
     FIELDS = ('wlan.sa',
               'wlan_mgt.ssid subtype probereq',)
     READ_FILTER = 'wlan.fc.type_subtype eq 4'

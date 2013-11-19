@@ -12,5 +12,5 @@ class PacketSnifferPanel(wx.Panel):
         self.SetSizer(sizer)
 
     def start_wireshark(self, event):
-        os.system("gksudo wireshark &")
+        os.system("wireshark &")
 

@@ -46,7 +46,7 @@ class WLAN():
         self.monitor_mode = monitor_mode
 
     def enable_monitor_mode(self):
-        cmd = "gksudo airmon-ng start %s" % self.interface_name
+        cmd = "airmon-ng start %s" % self.interface_name
         print "Enabling monitor mode:"
         print cmd
         output = subprocess.check_output(cmd, shell=True)
@@ -54,7 +54,7 @@ class WLAN():
         # XXX : should actually check that it worked
 
     def disable_monitor_mode(self):
-        cmd = "gksudo airmon-ng stop %s" % self.interface_name
+        cmd = "airmon-ng stop %s" % self.interface_name
         print "Disabling monitor mode:"
         print cmd
         lines = subprocess.check_output(cmd, shell=True)

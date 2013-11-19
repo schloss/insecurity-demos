@@ -96,7 +96,7 @@ class MDNSMon0CapturePanel(wx.Panel):
 
     def start_monitor_mode(self, event=None):
         devname = self.current_device()
-        lines = subprocess.check_output("gksudo airmon-ng start %s" % \
+        lines = subprocess.check_output("airmon-ng start %s" % \
                                         devname,
                                         shell=True)
         # print lines   # DEBUG
@@ -105,7 +105,7 @@ class MDNSMon0CapturePanel(wx.Panel):
 
     def stop_monitor_mode(self, event=None):
         devname = self.current_device()
-        lines = subprocess.check_output("gksudo airmon-ng stop %s" % \
+        lines = subprocess.check_output("airmon-ng stop %s" % \
                                         devname,
                                         shell=True)
         # print lines   # DEBUG
@@ -126,7 +126,7 @@ class MDNSMon0CapturePanel(wx.Panel):
     def start_capture(self, event=None):
         devname = self.current_device()
         print "Starting airmon-ng..."
-        output = subprocess.Popen("gksudo airmon-ng start %s" % \
+        output = subprocess.Popen("airmon-ng start %s" % \
                                   devname,
                                   shell=True,
                                   stdout=subprocess.PIPE,
@@ -134,7 +134,7 @@ class MDNSMon0CapturePanel(wx.Panel):
                                   close_fds=True)
         output.wait()
         print "Starting tshark..."
-        #self.tshark = subprocess.Popen("gksudo tshark -n -T fields \
+        #self.tshark = subprocess.Popen("tshark -n -T fields \
         #                               -e dns.qry.name -i %s \
         #                               -R 'udp.srcport == 5353'" % devname,
         #                               shell=True,
@@ -143,7 +143,7 @@ class MDNSMon0CapturePanel(wx.Panel):
         #                               stderr=subprocess.PIPE,
         #                               close_fds=True)
 
-        self.tshark = subprocess.Popen("gksudo tshark -n -T fields \
+        self.tshark = subprocess.Popen("tshark -n -T fields \
                                        -e http.host -i %s \
                                        -R 'http'" % devname,
                                        shell=True,
@@ -162,7 +162,7 @@ class MDNSMon0CapturePanel(wx.Panel):
         self.tshark.terminate()
         self.tshark = None
 
-        output = subprocess.Popen("gksudo airmon-ng stop %s" % devname,
+        output = subprocess.Popen("airmon-ng stop %s" % devname,
                                   shell=True,
                                   close_fds=True)
         output.wait()
