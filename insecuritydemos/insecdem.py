@@ -7,20 +7,7 @@ from wx.lib.utils import AdjustRectToScreen
 import wlan
 from wireless_demo import WirelessDemo
 
-class InsecurityDemosGUI(wx.App):
-    """The main entry point for the Insecurity Demos application."""
-
-    def __init__(self):
-        wx.App.__init__(self, redirect=False)
-
-    def OnInit(self):
-        """Called just before the application starts."""
-        frame = MainFrame()
-        self.SetTopWindow(frame)
-        frame.Show()
-        return True
-
-class MainFrame(wx.Frame):
+class InsecurityDemosFrame(wx.Frame):
     """The top-level GUI element of the Plover application."""
 
     # Class constants.
@@ -30,8 +17,9 @@ class MainFrame(wx.Frame):
     STOP_LABEL = "Stop"
     DEMO_LABEL = "Demo"
 
-    def __init__(self):
-        wx.Frame.__init__(self, None, title=self.TITLE)
+    def __init__(self, parent, log):
+        self.log = log # XXX : This should be used throughout
+        wx.Frame.__init__(self, parent, title=self.TITLE)
         self.Bind(wx.EVT_CLOSE, self._quit)
         self.demos = WirelessDemo.DEMOS
         self.current_demo_set = WirelessDemo(self)
@@ -75,7 +63,7 @@ class MainFrame(wx.Frame):
 
         global_sizer = wx.BoxSizer(wx.VERTICAL)
         global_sizer.Add(control_sizer)
-        global_sizer.Add(self.current_demo_set.data_panel, flag=wx.ALL)
+        global_sizer.Add(self.current_demo_set.data_panel, flag=wx.EXPAND)
         self.SetSizer(global_sizer)
         global_sizer.Fit(self)
         self.SetRect(AdjustRectToScreen(self.GetRect()))
@@ -90,9 +78,10 @@ class MainFrame(wx.Frame):
         else:
             label = self.START_LABEL
         self.status_button.SetLabel(label)
-        is_enabled = label == self.START_LABEL
-        self.demo_choice.Enable(is_enabled)
-        self.current_demo_set.enable_control_panel(is_enabled)
+        is_enabled = label == self.STOP_LABEL
+        self.demo_choice.Enable(not is_enabled)
+        self.current_demo_set.enable_control_panel(not is_enabled)
+        self.current_demo_set.enable_demo('foo', is_enabled)
 
     def _demo_selected(self, event):
         print "Selected the \"%s\" demo." % self.demo_choice.GetSelection()
@@ -119,5 +108,8 @@ class MainFrame(wx.Frame):
         wx.AboutBox(info)
 
 if __name__ == "__main__":
-    app = InsecurityDemosGUI()
+    import sys
+    app = wx.App()
+    frame = InsecurityDemosFrame(None, sys.stdout)
+    frame.Show(True)
     app.MainLoop()

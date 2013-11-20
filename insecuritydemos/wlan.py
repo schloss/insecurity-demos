@@ -130,3 +130,17 @@ class Network():
 
     def __str__(self):
         return "%s (%s)" % (self.essid, self.bssid)
+
+class User():
+
+    def __init__(self,
+                 mac=None,
+                 hardware=None,
+                 nickname=None,
+                 ip=None,
+                 aps=None):
+        self.mac = mac
+        self.hardware = hardware
+        self.nickname = nickname
+        self.ip = ip
+        self.aps = aps or []
