@@ -23,15 +23,7 @@ Files: insecdem /usr/bin
  insecuritydemos/insecdem.py /usr/share
  insecuritydemos/wlan.py /usr/share
  insecuritydemos/tshark.py /usr/share
- insecuritydemos/panels/__init__.py /usr/share
- insecuritydemos/panels/keylogger.py /usr/share
- insecuritydemos/panels/packetsniffer.py /usr/share
- insecuritydemos/panels/passwordcracker.py /usr/share
- insecuritydemos/panels/mdnscapture.py /usr/share
- insecuritydemos/panels/mdnsmon0capture.py /usr/share
- insecuritydemos/panels/wlanprobes.py /usr/share
- insecuritydemos/panels/httpcapture.py /usr/share
- insecuritydemos/panels/tsharkpanel.py /usr/share
+ insecuritydemos/wireless_demo.py /usr/share
  man/man1/insecdem.1 /usr/share
 Description: Digital security demos - contains tutorials and software.
  long description and info

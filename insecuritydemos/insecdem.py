@@ -3,21 +3,19 @@
 """The main graphical user interface for Insecurity Demos"""
 
 import wx
-import wx.animate
 from wx.lib.utils import AdjustRectToScreen
-from panels import *
 import wlan
+from wireless_demo import WirelessDemo
 
 class InsecurityDemosGUI(wx.App):
     """The main entry point for the Insecurity Demos application."""
 
-    def __init__(self, demos):
-        self.demos = demos # XXX : meh
+    def __init__(self):
         wx.App.__init__(self, redirect=False)
 
     def OnInit(self):
         """Called just before the application starts."""
-        frame = MainFrame(self.demos) # XXX : meh
+        frame = MainFrame()
         self.SetTopWindow(frame)
         frame.Show()
         return True
@@ -30,14 +28,13 @@ class MainFrame(wx.Frame):
     BORDER = 5
     START_LABEL = "Start"
     STOP_LABEL = "Stop"
-    REFRESH_LABEL = "Refresh"
     DEMO_LABEL = "Demo"
-    NETWORK_INTERFACE_LABEL = "Network Interface"
-    WIRELESS_NETWORK_LABEL = "Wireless Network"
 
-    def __init__(self, demos):
+    def __init__(self):
         wx.Frame.__init__(self, None, title=self.TITLE)
         self.Bind(wx.EVT_CLOSE, self._quit)
+        self.demos = WirelessDemo.DEMOS
+        self.current_demo_set = WirelessDemo(self)
 
         # Menu bar.
         MENU_QUIT = 101
@@ -62,92 +59,29 @@ class MainFrame(wx.Frame):
         self.status_button.Bind(wx.EVT_BUTTON, self._status_toggled)
 
         # Demo selection.
-        demo_titles = [x.title for x in demos]
-        self.demos = dict([(x.title, x) for x in demos])
-        self.demo_choice = wx.Choice(self, -1, choices=demo_titles)
+        self.demo_choice = wx.Choice(self, -1, choices=self.demos)
         self.demo_choice.Bind(wx.EVT_CHOICE, self._demo_selected)
 
-        # Network interface selection.
-        self.interface_choice = wx.Choice(self, -1,
-                                          size=wx.Size(200, -1),
-                                          choices=[])
-        self.interface_refresh = wx.Button(self, label=self.REFRESH_LABEL)
-        self.interface_refresh.Bind(wx.EVT_BUTTON, self._wireless_refresh)
-
-        # Wireless network selection.
-        self.network_choice = wx.Choice(self, -1,
-                                          size=wx.Size(300, -1),
-                                          choices=[])
-        self.network_refresh = wx.Button(self, label=self.REFRESH_LABEL)
-        self.network_refresh.Bind(wx.EVT_BUTTON, self._network_refresh)
-
         # Layout.
-        sizer = wx.BoxSizer(wx.HORIZONTAL)
         flags = wx.ALL | wx.ALIGN_CENTER_VERTICAL
         demo_box = wx.StaticBox(self, -1, self.DEMO_LABEL)
         demo_sizer = wx.StaticBoxSizer(demo_box, wx.HORIZONTAL)
         demo_sizer.Add(self.status_button, flag=flags, border=self.BORDER)
         demo_sizer.Add(self.demo_choice, flag=flags, border=self.BORDER)
-        sizer.Add(demo_sizer, flag=flags, border=self.BORDER)
 
-        interface_box = wx.StaticBox(self, -1, self.NETWORK_INTERFACE_LABEL)
-        interface_sizer = wx.StaticBoxSizer(interface_box, wx.HORIZONTAL)
-        interface_sizer.Add(self.interface_choice,
-                            flag=flags,
-                            border=self.BORDER)
-        interface_sizer.Add(self.interface_refresh,
-                            flag=flags,
-                            border=self.BORDER)
-        sizer.Add(interface_sizer, flag=flags, border=self.BORDER)
-
-        network_box = wx.StaticBox(self, -1, self.WIRELESS_NETWORK_LABEL)
-        network_sizer = wx.StaticBoxSizer(network_box, wx.HORIZONTAL)
-        network_sizer.Add(self.network_choice,
-                          flag=flags,
-                          border=self.BORDER)
-        network_sizer.Add(self.network_refresh,
-                          flag=flags,
-                          border=self.BORDER)
-        sizer.Add(network_sizer, flag=flags, border=self.BORDER)
+        control_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        control_sizer.Add(demo_sizer, flag=flags, border=self.BORDER)
+        control_sizer.Add(self.current_demo_set.control_panel)
 
         global_sizer = wx.BoxSizer(wx.VERTICAL)
-        global_sizer.Add(sizer)
+        global_sizer.Add(control_sizer)
+        global_sizer.Add(self.current_demo_set.data_panel, flag=wx.ALL)
         self.SetSizer(global_sizer)
         global_sizer.Fit(self)
         self.SetRect(AdjustRectToScreen(self.GetRect()))
 
         # Load data.
-        self._wireless_refresh()
-
-    def _wireless_refresh(self, event=None):
-        self.Enable(False)
-        current_interface = self.interface_choice.GetStringSelection()
-        interfaces = wlan.enumerate_interfaces()
-        interface_names = [i.interface_name for i in interfaces]
-        self.interface_choice.SetItems(interface_names)
-        if interface_names:
-            if current_interface in interface_names:
-                self.interface_choice.SetStringSelection(current_interface)
-            else:
-                self.interface_choice.SetSelection(0)
-        self.Enable(True)
-
-    def _network_refresh(self, event=None):
-        interface = self.interface_choice.GetStringSelection()
-        if not interface:
-            self.network_choice.SetItems([])
-        else:
-            self.Enable(False)
-            current_network = self.network_choice.GetStringSelection()
-            networks = wlan.enumerate_networks(interface)
-            network_names = map(str, networks)
-            self.network_choice.SetItems(network_names)
-            if network_names:
-                if current_network in network_names:
-                    self.network_choice.SetStringSelection(current_network)
-                else:
-                    self.network_choice.SetSelection(0)
-            self.Enable(True)
+        self.current_demo_set.initialize_data()
 
     def _status_toggled(self, event):
         label = self.status_button.GetLabel()
@@ -156,12 +90,9 @@ class MainFrame(wx.Frame):
         else:
             label = self.START_LABEL
         self.status_button.SetLabel(label)
-        for control in (self.demo_choice,
-                        self.interface_choice,
-                        self.interface_refresh,
-                        self.network_choice,
-                        self.network_refresh):
-            control.Enable(label == self.START_LABEL)
+        is_enabled = label == self.START_LABEL
+        self.demo_choice.Enable(is_enabled)
+        self.current_demo_set.enable_control_panel(is_enabled)
 
     def _demo_selected(self, event):
         print "Selected the \"%s\" demo." % self.demo_choice.GetSelection()
@@ -188,6 +119,5 @@ class MainFrame(wx.Frame):
         wx.AboutBox(info)
 
 if __name__ == "__main__":
-    demos = [WLANProbesPanel, HTTPCapturePanel]
-    app = InsecurityDemosGUI(demos=demos)
+    app = InsecurityDemosGUI()
     app.MainLoop()
