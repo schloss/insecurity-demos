@@ -5,7 +5,7 @@
 import wx
 from wx.lib.utils import AdjustRectToScreen
 import wlan
-from wireless_demo import WirelessDemo
+from wireless_demo_set import WirelessDemoSet
 
 class InsecurityDemosFrame(wx.Frame):
     """The top-level GUI element of the Plover application."""
@@ -21,8 +21,8 @@ class InsecurityDemosFrame(wx.Frame):
         self.log = log # XXX : This should be used throughout
         wx.Frame.__init__(self, parent, title=self.TITLE)
         self.Bind(wx.EVT_CLOSE, self._quit)
-        self.demos = WirelessDemo.DEMOS
-        self.current_demo_set = WirelessDemo(self)
+        self.current_demo_set = WirelessDemoSet(self)
+        self.demos = self.current_demo_set.demo_names()
 
         # Menu bar.
         MENU_QUIT = 101
@@ -48,7 +48,6 @@ class InsecurityDemosFrame(wx.Frame):
 
         # Demo selection.
         self.demo_choice = wx.Choice(self, -1, choices=self.demos)
-        self.demo_choice.Bind(wx.EVT_CHOICE, self._demo_selected)
 
         # Layout.
         flags = wx.ALL | wx.ALIGN_CENTER_VERTICAL
@@ -80,11 +79,9 @@ class InsecurityDemosFrame(wx.Frame):
         self.status_button.SetLabel(label)
         is_enabled = label == self.STOP_LABEL
         self.demo_choice.Enable(not is_enabled)
+        demo_name = self.demo_choice.GetStringSelection()
         self.current_demo_set.enable_control_panel(not is_enabled)
-        self.current_demo_set.enable_demo('foo', is_enabled)
-
-    def _demo_selected(self, event):
-        print "Selected the \"%s\" demo." % self.demo_choice.GetSelection()
+        self.current_demo_set.enable_demo(demo_name, is_enabled)
 
     def _quit(self, event):
         self.Destroy()

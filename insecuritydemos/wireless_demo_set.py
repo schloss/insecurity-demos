@@ -2,6 +2,7 @@ import json
 import wlan
 import wx
 import wx.lib.mixins.listctrl as listmixins
+from demos import wireless_demos
 
 TEST_USERS ="""
 {"Users": [{"nickname" : "Alice",
@@ -25,11 +26,13 @@ TEST_USERS ="""
 }
 """
 
-class WirelessDemo():
+class WirelessDemoSet():
     """A collection of wireless insecurity demos."""
 
     # Class constants.
-    DEMOS = ('Wifi History', 'Pages Visited')
+    DEMOS = (wireless_demos.AccessPointDemo,
+             wireless_demos.MACScanDemo,
+             wireless_demos.Foo,)
     BORDER = 5
     REFRESH_LABEL = "Refresh"
     NETWORK_INTERFACE_LABEL = "Network Interface"
@@ -50,6 +53,9 @@ class WirelessDemo():
     def _get_test_users(self):
         data = json.loads(TEST_USERS)
         return [wlan.User(**x) for x in data['Users']]
+
+    def demo_names(self):
+        return [demo.TITLE for demo in self.DEMOS]
 
     def enable_demo(self, demo, is_enabled):
         if not is_enabled:

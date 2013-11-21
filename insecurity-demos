@@ -6,7 +6,7 @@ Homepage: https://github.com/schloss/insecurity-demos
 Standards-Version: 3.6.2
 
 Package: insecurity-demos
-Version: 2013111900
+Version: 2013112200
 Maintainer: Schloss <schloss-admin@googlegroups.com>
 #Pre-Depends: <comma-separated list of packages>
 Depends: python, python-wxgtk2.8, gksu, aircrack-ng, tshark, wireshark
@@ -23,7 +23,9 @@ Files: insecdem /usr/bin
  insecuritydemos/insecdem.py /usr/share
  insecuritydemos/wlan.py /usr/share
  insecuritydemos/tshark.py /usr/share
- insecuritydemos/wireless_demo.py /usr/share
+ insecuritydemos/wireless_demo_set.py /usr/share
+ insecuritydemos/demos/__init__.py /usr/share
+ insecuritydemos/demos/wireless_demos.py /usr/share
  man/man1/insecdem.1 /usr/share
 Description: Digital security demos - contains tutorials and software.
  long description and info
