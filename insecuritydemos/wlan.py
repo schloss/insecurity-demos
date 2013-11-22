@@ -8,10 +8,18 @@ def enumerate_networks(interface):
     interface = str(interface)
     cmd = "iwlist %s scan" % interface
     output = subprocess.check_output(cmd, shell=True)
-    assert(output.split('\n')[0].replace(' ','') ==
-           ("%sScancompleted:" % interface))
-    networks = networks_from_iwlist(output)
-    return networks
+    result = output.split('\n', 1)[0].replace(' ','')
+    if result == ("%sScancompleted:" % interface):
+        return networks_from_iwlist(output)
+    elif result == ("%sNoscanresults" % interface):
+        return []
+    print "Oops: Something unexpected happened when running this command:"
+    print "      " + cmd
+    print "      the output of which was:"
+    print "************************************"
+    print output
+    print "************************************"
+    return None
 
 def enumerate_interfaces():
     """Returns a list of all wireless networking interfaces found on
