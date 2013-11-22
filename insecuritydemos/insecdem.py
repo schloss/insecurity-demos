@@ -84,8 +84,9 @@ class InsecurityDemosFrame(wx.Frame):
         self.current_demo_set.enable_demo(demo_name, is_enabled)
 
     def _quit(self, event):
+        self.current_demo_set.destroy()
         self.Destroy()
-
+        
     def _show_about_dialog(self, event=None):
         """Called when the About... button is clicked."""
         info = wx.AboutDialogInfo()

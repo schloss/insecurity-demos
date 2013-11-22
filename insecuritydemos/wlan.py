@@ -7,7 +7,14 @@ def enumerate_networks(interface):
         return None
     interface = str(interface)
     cmd = "iwlist %s scan" % interface
-    output = subprocess.check_output(cmd, shell=True)
+    try:
+        output = subprocess.check_output(cmd, shell=True)
+    except subprocess.CalledProcessError:
+        print "Oops: Something is wrong with the network interface."
+        print "To fix it, try running this command:"
+        print ("sudo ifconfig %s down && sudo ifconfig %s up" %
+               (interface, interface))
+        return []
     result = output.split('\n', 1)[0].replace(' ','')
     if result == ("%sScancompleted:" % interface):
         return networks_from_iwlist(output)
@@ -19,7 +26,7 @@ def enumerate_networks(interface):
     print "************************************"
     print output
     print "************************************"
-    return None
+    return []
 
 def enumerate_interfaces():
     """Returns a list of all wireless networking interfaces found on
@@ -60,27 +67,33 @@ def networks_from_iwlist(blob):
     return networks
 
 def interfaces_from_airmon_ng(blob):
+    MONITOR_MODE_FLAG = '(monitor mode enabled on'
     blocks = map(lambda x: x.strip(), blob.split('\n\n'))
     for i, block in enumerate(blocks):
         if block.startswith("Interface"):
             block = block.replace('\t','')
             if block == "InterfaceChipsetDriver":
-                interface_lines = blocks[i+1].split('\n')
+                interface_lines = blocks[i+1].splitlines()
                 break
     else:
         interface_lines = []
     interface_lines = filter(None, interface_lines)
     interfaces = []
     for entry in interface_lines:
-        lines = entry.split('\n')
-        args = map(lambda x: x.strip(), lines[0].strip().split('\t'))
+        entry = entry.strip()
+        if entry.startswith(MONITOR_MODE_FLAG):
+            # This only happens when an interface is put into monitor
+            # mode, in which case the results from airmon-ng might be
+            # for that interface only. The remaining interface lines
+            # list other monitor interfaces.  XXX : check this with
+            # multiple interfaces available.
+            entry = entry.strip("()")
+            assert(len(interfaces) == 1)
+            interfaces[0].monitor_mode = entry.split()[-1]
+            continue
+        args = map(lambda x: x.strip(), entry.strip().split('\t'))
         args = filter(None, args)
-        interface = Interface(*args)
-        if len(lines) > 1:
-            extra = lines[1].strip(string.whitespace + '()')
-            if extra.startswith('monitor mode enabled on'):
-                interface.monitor_mode = extra.split()[-1]
-        interfaces.append(interface)
+        interfaces.append(Interface(*args))
     return interfaces
 
 class Interface():
@@ -97,19 +110,28 @@ class Interface():
 
     def enable_monitor_mode(self):
         cmd = "airmon-ng start %s" % self.interface_name
-        print "Enabling monitor mode:"
-        print cmd
         output = subprocess.check_output(cmd, shell=True)
-        print output
-        # XXX : should actually check that it worked
+        results = interfaces_from_airmon_ng(output)
+        assert(results)
+        interface = results[0]
+        assert(interface.interface_name == self.interface_name)
+        assert(interface.monitor_mode)
+        self.monitor_mode = interface.monitor_mode
 
     def disable_monitor_mode(self):
-        cmd = "airmon-ng stop %s" % self.interface_name
-        print "Disabling monitor mode:"
-        print cmd
-        lines = subprocess.check_output(cmd, shell=True)
-        print lines
-        # XXX : should actually check that it worked
+        if not self.monitor_mode:
+            return
+        cmd = "airmon-ng stop %s" % self.monitor_mode
+        lines = subprocess.check_output(cmd, shell=True).splitlines()
+        # Verify that the interface was indeed taken out of monitor mode.
+        for x in lines:
+            if x.startswith(self.monitor_mode) and x.endswith("(removed)"):
+                self.monitor_mode = None
+                break
+        else:
+            print "Oops: Something unexpected happened."
+            print ("Could not verify that %s was taken out of monitor mode."
+                   % self.interface_name)
 
     def __str__(self):
         return self.interface_name
