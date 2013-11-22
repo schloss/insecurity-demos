@@ -2,7 +2,9 @@
 
 """The main graphical user interface for Insecurity Demos"""
 
+import os.path
 import wx
+import wx.html
 from wx.lib.utils import AdjustRectToScreen
 import wlan
 from wireless_demo_set import WirelessDemoSet
@@ -16,6 +18,7 @@ class InsecurityDemosFrame(wx.Frame):
     START_LABEL = "Start"
     STOP_LABEL = "Stop"
     DEMO_LABEL = "Demo"
+    NOTES_LABEL = "Notes"
 
     def __init__(self, parent, log):
         self.log = log # XXX : This should be used throughout
@@ -48,6 +51,12 @@ class InsecurityDemosFrame(wx.Frame):
 
         # Demo selection.
         self.demo_choice = wx.Choice(self, -1, choices=self.demos)
+        self.demo_choice.Bind(wx.EVT_CHOICE, self._update_notes)
+
+        # Training notes.
+        self.notes_button = wx.Button(self, label=self.NOTES_LABEL)
+        self.notes_button.Bind(wx.EVT_BUTTON, self._notes_pressed)
+        self.notes_window = None
 
         # Layout.
         flags = wx.ALL | wx.ALIGN_CENTER_VERTICAL
@@ -55,6 +64,7 @@ class InsecurityDemosFrame(wx.Frame):
         demo_sizer = wx.StaticBoxSizer(demo_box, wx.HORIZONTAL)
         demo_sizer.Add(self.status_button, flag=flags, border=self.BORDER)
         demo_sizer.Add(self.demo_choice, flag=flags, border=self.BORDER)
+        demo_sizer.Add(self.notes_button, flag=flags, border=self.BORDER)
 
         control_sizer = wx.BoxSizer(wx.HORIZONTAL)
         control_sizer.Add(demo_sizer, flag=flags, border=self.BORDER)
@@ -83,10 +93,41 @@ class InsecurityDemosFrame(wx.Frame):
         self.current_demo_set.enable_control_panel(not is_enabled)
         self.current_demo_set.enable_demo(demo_name, is_enabled)
 
+    def _notes_pressed(self, event):
+        if not self.notes_window:
+            self.notes_window = wx.Frame(None, size=wx.Size(700,700))
+            self.html = wx.html.HtmlWindow(self.notes_window)
+            sizer = wx.BoxSizer(wx.VERTICAL)
+            sizer.Add(self.html, 1, wx.GROW)
+            self.notes_window.SetSizer(sizer)
+            self.notes_window.Show()
+            self._update_notes()
+        else:
+            self.notes_window.Raise()
+
+    def _update_notes(self, event=None):
+        if self.notes_window:
+            demo = self.demo_choice.GetStringSelection()
+            file_name = demo.replace(' ', '_')
+            file_name = file_name.replace("'",'')
+            file_name = file_name.replace('-','_')
+            file_name = file_name.lower()
+            file_name += ".html"
+            file_name = os.path.join(os.path.dirname(__file__),
+                                     'demos',
+                                     file_name)
+            if os.path.isfile(file_name):
+                self.html.LoadPage(file_name)
+            else:
+                self.html.SetPage("<html><body>There are no notes for the "
+                                  "\"%s\" demo.</body></html>" % demo)
+
     def _quit(self, event):
         self.current_demo_set.destroy()
+        if self.notes_window:
+            self.notes_window.Destroy()
         self.Destroy()
-        
+
     def _show_about_dialog(self, event=None):
         """Called when the About... button is clicked."""
         info = wx.AboutDialogInfo()

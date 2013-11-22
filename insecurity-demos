@@ -26,6 +26,8 @@ Files: insecdem /usr/bin
  insecuritydemos/wireless_demo_set.py /usr/share
  insecuritydemos/demos/__init__.py /usr/share
  insecuritydemos/demos/wireless_demos.py /usr/share
+ insecuritydemos/demos/wifi_history.html /usr/share
+ insecuritydemos/demos/device_scan.html /usr/share
  man/man1/insecdem.1 /usr/share
 Description: Digital security demos - contains tutorials and software.
  long description and info
