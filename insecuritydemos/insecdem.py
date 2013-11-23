@@ -91,7 +91,7 @@ class InsecurityDemosFrame(wx.Frame):
         self.demo_choice.Enable(not is_enabled)
         demo_name = self.demo_choice.GetStringSelection()
         self.current_demo_set.enable_control_panel(not is_enabled)
-        self.current_demo_set.enable_demo(demo_name, is_enabled)
+        wx.CallAfter(self.current_demo_set.enable_demo, demo_name, is_enabled)
 
     def _notes_pressed(self, event):
         if not self.notes_window:
