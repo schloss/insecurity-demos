@@ -2,7 +2,7 @@ class AccessPointDemo():
 
     TITLE = "Wifi History"
     MONITOR_MODE = False
-    
+    WIRELESS_NETWORKS_CONTROL = False
     TSHARK_FIELDS = ('wlan.sa',
                      'wlan_mgt.ssid subtype probereq',)
     TSHARK_READ_FILTER = 'wlan.fc.type_subtype eq 4'
@@ -23,7 +23,9 @@ class AccessPointDemo():
 class MACScanDemo():
     TITLE = "Device Scan"
     MONITOR_MODE = True
+    WIRELESS_NETWORKS_CONTROL = True
 
 class Foo():
     TITLE = "Some Other Demo"
     MONITOR_MODE = False
+    WIRELESS_NETWORKS_CONTROL = True

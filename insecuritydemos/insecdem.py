@@ -51,7 +51,7 @@ class InsecurityDemosFrame(wx.Frame):
 
         # Demo selection.
         self.demo_choice = wx.Choice(self, -1, choices=self.demos)
-        self.demo_choice.Bind(wx.EVT_CHOICE, self._update_notes)
+        self.demo_choice.Bind(wx.EVT_CHOICE, self._demo_selected)
 
         # Training notes.
         self.notes_button = wx.Button(self, label=self.NOTES_LABEL)
@@ -79,6 +79,7 @@ class InsecurityDemosFrame(wx.Frame):
 
         # Load data.
         self.current_demo_set.initialize_data()
+        self._demo_selected()
 
     def _status_toggled(self, event):
         label = self.status_button.GetLabel()
@@ -90,8 +91,12 @@ class InsecurityDemosFrame(wx.Frame):
         is_enabled = label == self.STOP_LABEL
         self.demo_choice.Enable(not is_enabled)
         demo_name = self.demo_choice.GetStringSelection()
-        self.current_demo_set.enable_control_panel(not is_enabled)
-        wx.CallAfter(self.current_demo_set.enable_demo, demo_name, is_enabled)
+        self.current_demo_set.enable_demo( demo_name, is_enabled)
+
+    def _demo_selected(self, event=None):
+        demo = self.demo_choice.GetStringSelection()
+        self._update_notes(demo)
+        self.current_demo_set.select_demo(demo)
 
     def _notes_pressed(self, event):
         if not self.notes_window:
@@ -101,13 +106,13 @@ class InsecurityDemosFrame(wx.Frame):
             sizer.Add(self.html, 1, wx.GROW)
             self.notes_window.SetSizer(sizer)
             self.notes_window.Show()
-            self._update_notes()
+            demo = self.demo_choice.GetStringSelection()
+            self._update_notes(demo)
         else:
             self.notes_window.Raise()
 
-    def _update_notes(self, event=None):
+    def _update_notes(self, demo):
         if self.notes_window:
-            demo = self.demo_choice.GetStringSelection()
             file_name = demo.replace(' ', '_')
             file_name = file_name.replace("'",'')
             file_name = file_name.replace('-','_')

@@ -64,13 +64,25 @@ class WirelessDemoSet():
     def demo_names(self):
         return [demo.TITLE for demo in self.DEMOS]
 
-    def enable_demo(self, demo, is_enabled):
-        if not is_enabled:
-            return
+    def select_demo(self, demo):
         demo = self._get_demo(demo)
         if not demo:
             return
+        self._enable_network_panel(demo.WIRELESS_NETWORKS_CONTROL)
 
+    def enable_demo(self, demo_title, is_enabled):
+        demo = self._get_demo(demo_title)
+        if not demo:
+            return
+        self._enable_network_panel(not is_enabled and
+                                   demo.WIRELESS_NETWORKS_CONTROL)
+        self._enable_interface_panel(not is_enabled)
+        wx.CallAfter(self._enable_demo, demo, is_enabled)
+
+    def _enable_demo(self, demo, is_enabled):
+        if not is_enabled:
+            print "XXX: implement demo disabling"
+            return
         # Put the interface into the correct mode.
         interface = self._get_interface()
         if demo.MONITOR_MODE and not interface.monitor_mode:
@@ -79,18 +91,20 @@ class WirelessDemoSet():
         elif not demo.MONITOR_MODE and interface.monitor_mode:
             interface.disable_monitor_mode()
             self.wireless_refresh()
-
         # XXX: fake user data just to show something is happening
         for user in self._get_test_users():
             self.data_grid.SetItem(user)
 
-    def enable_control_panel(self, is_enabled):
+    def _enable_network_panel(self, is_enabled):
+        for control in (self.network_choice, self.network_refresh_button):
+            control.Enable(is_enabled)
+
+    def _enable_interface_panel(self, is_enabled):
         for control in (self.monitor_mode_label,
                         self.interface_choice,
-                        self.interface_refresh_button,
-                        self.network_choice,
-                        self.network_refresh_button):
+                        self.interface_refresh_button):
             control.Enable(is_enabled)
+
 
     def _get_demo(self, title):
         for demo in self.DEMOS:
