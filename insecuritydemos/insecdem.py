@@ -19,13 +19,13 @@ class InsecurityDemosFrame(wx.Frame):
     STOP_LABEL = "Stop"
     DEMO_LABEL = "Demo"
     NOTES_LABEL = "Notes"
+    CHOOSE_DEMO_LABEL = "Select a demo..."
 
     def __init__(self, parent, log):
         self.log = log # XXX : This should be used throughout
         wx.Frame.__init__(self, parent, title=self.TITLE)
         self.Bind(wx.EVT_CLOSE, self._quit)
         self.current_demo_set = WirelessDemoSet(self)
-        self.demos = self.current_demo_set.demo_names()
 
         # Menu bar.
         MENU_QUIT = 101
@@ -50,7 +50,7 @@ class InsecurityDemosFrame(wx.Frame):
         self.status_button.Bind(wx.EVT_BUTTON, self._status_toggled)
 
         # Demo selection.
-        self.demo_choice = wx.Choice(self, -1, choices=self.demos)
+        self.demo_choice = wx.Choice(self, -1)
         self.demo_choice.Bind(wx.EVT_CHOICE, self._demo_selected)
 
         # Training notes.
@@ -79,7 +79,14 @@ class InsecurityDemosFrame(wx.Frame):
 
         # Load data.
         self.current_demo_set.initialize_data()
+        self._populate_demo_choices()
         self._demo_selected()
+
+    def _populate_demo_choices(self):
+        choices = [self.CHOOSE_DEMO_LABEL] + self.current_demo_set.demo_names()
+        self.demo_choice.SetItems(choices)
+        self.demo_choice.SetSelection(0)
+        self.GetSizer().Fit(self)
 
     def _status_toggled(self, event):
         label = self.status_button.GetLabel()
@@ -91,9 +98,10 @@ class InsecurityDemosFrame(wx.Frame):
         is_enabled = label == self.STOP_LABEL
         self.demo_choice.Enable(not is_enabled)
         demo_name = self.demo_choice.GetStringSelection()
-        self.current_demo_set.enable_demo( demo_name, is_enabled)
+        self.current_demo_set.enable_demo(demo_name, is_enabled)
 
     def _demo_selected(self, event=None):
+        self.status_button.Enable(self.demo_choice.GetSelection() != 0)
         demo = self.demo_choice.GetStringSelection()
         self._update_notes(demo)
         self.current_demo_set.select_demo(demo)
@@ -116,6 +124,7 @@ class InsecurityDemosFrame(wx.Frame):
             file_name = demo.replace(' ', '_')
             file_name = file_name.replace("'",'')
             file_name = file_name.replace('-','_')
+            file_name = file_name.replace('.','')
             file_name = file_name.lower()
             file_name += ".html"
             file_name = os.path.join(os.path.dirname(__file__),
@@ -124,8 +133,11 @@ class InsecurityDemosFrame(wx.Frame):
             if os.path.isfile(file_name):
                 self.html.LoadPage(file_name)
             else:
-                self.html.SetPage("<html><body>There are no notes for the "
-                                  "\"%s\" demo.</body></html>" % demo)
+                self.html.SetPage("<html><body><p>There are no notes for the "
+                                  "\"%s\" demo. To create notes for this demo,"
+                                  " add and edit this file:</p><p><code>%s"
+                                  "</code></p></body></html>" %
+                                  (demo, file_name))
 
     def _quit(self, event):
         self.current_demo_set.destroy()

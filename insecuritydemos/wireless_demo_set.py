@@ -66,9 +66,12 @@ class WirelessDemoSet():
 
     def select_demo(self, demo):
         demo = self._get_demo(demo)
-        if not demo:
-            return
-        self._enable_network_panel(demo.WIRELESS_NETWORKS_CONTROL)
+        if demo:
+            self._enable_network_panel(demo.WIRELESS_NETWORKS_CONTROL)
+            self._enable_interface_panel(True)
+        else:
+            self._enable_network_panel(False)
+            self._enable_interface_panel(False)
 
     def enable_demo(self, demo_title, is_enabled):
         demo = self._get_demo(demo_title)
