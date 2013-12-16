@@ -23,7 +23,7 @@ class TShark(subprocess.Popen):
         self.queue_thread = None
 
     def command_line_string(self):
-        cmd = ["tshark -n -l"]
+        cmd = ["tshark -2 -n -l"]
         if self.interface:
             cmd.append("-i %s" % self.interface)
         if self.fields:

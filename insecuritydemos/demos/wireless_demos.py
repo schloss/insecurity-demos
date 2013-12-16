@@ -1,31 +1,16 @@
 class AccessPointDemo():
-
     TITLE = "Wifi History"
-    MONITOR_MODE = False
+    MONITOR_MODE = True
     WIRELESS_NETWORKS_CONTROL = False
     TSHARK_FIELDS = ('wlan.sa',
                      'wlan_mgt.ssid subtype probereq',)
     TSHARK_READ_FILTER = 'wlan.fc.type_subtype eq 4'
 
-    def update_line(self, fields):
-        ind = self.capture_list.FindItem(-1, fields[0], False)
-        if ind != -1:
-            old = self.capture_list.GetItem(ind, 1)
-            new = [x.strip() for x in old.GetText().split(",")]
-            new.append(fields[1])
-            new = ", ".join(set(new))
-            self.capture_list.SetStringItem(ind, 1, new)
-        else:
-            self.capture_list.InsertStringItem(self.index, fields[0])
-            self.capture_list.SetStringItem(self.index, 1, fields[1])
-            self.index += 1
-
-class MACScanDemo():
-    TITLE = "Device Scan"
-    MONITOR_MODE = True
-    WIRELESS_NETWORKS_CONTROL = True
-
-class Foo():
-    TITLE = "Some Other Demo"
-    MONITOR_MODE = False
-    WIRELESS_NETWORKS_CONTROL = True
+    def interpret_tshark_output(self, fields):
+        out = {}
+        if fields and len(fields) == 2 and fields[0]:
+            out['mac'] = fields[0]
+            probe = fields[1]
+            if probe:
+                out['aps'] = [probe]
+        return out

@@ -174,3 +174,14 @@ class User():
         self.nickname = nickname
         self.ip = ip
         self.aps = aps or []
+        self.aps.sort()
+
+    def merge(self, user):
+        self.mac = self.mac or user.mac
+        self.hardware = self.hardware or user.hardware
+        self.nickname = user.nickname or self.nickname
+        self.ip = user.ip or self.ip
+        for ap in user.aps:
+            if ap not in self.aps:
+                self.aps.append(ap)
+        self.aps.sort()

@@ -3,6 +3,8 @@ import wlan
 import wx
 import wx.lib.mixins.listctrl as listmixins
 from demos import wireless_demos
+from tshark import TShark
+from Queue import Empty
 
 TEST_USERS ="""
 {"Users": [{"nickname" : "Alice",
@@ -30,9 +32,7 @@ class WirelessDemoSet():
     """A collection of wireless insecurity demos."""
 
     # Class constants.
-    DEMOS = (wireless_demos.AccessPointDemo,
-             wireless_demos.MACScanDemo,
-             wireless_demos.Foo,)
+    DEMOS = (wireless_demos.AccessPointDemo(),)
     BORDER = 5
     REFRESH_LABEL = "Refresh"
     NETWORK_INTERFACE_LABEL = "Network Interface"
@@ -43,11 +43,18 @@ class WirelessDemoSet():
                           'Wifi Card',
                           'IP Address',
                           'Wifi Networks Previously Used']
+    TSHARK_SEPARATOR = ','
+    TSHARK_POLL_INTERVAL = 500
 
     def __init__(self, parent):
+        self._polling_demo = None
+        self.timer = wx.Timer()
+        self.timer.Bind(wx.EVT_TIMER, self._poll_tshark)
+        self.tshark = None
         self.interfaces = []
         self._init_control_panel(parent)
         self._init_data_panel(parent)
+        self.users = {}
 
     def initialize_data(self):
         self.wireless_refresh()
@@ -56,6 +63,26 @@ class WirelessDemoSet():
         for i in self.interfaces:
             if i.monitor_mode:
                 i.disable_monitor_mode()
+
+    def _poll_tshark(self, event):
+        while self.tshark:
+            try:
+                line = self.tshark.queue.get_nowait()
+            except Empty:
+                break
+            line = line.strip()
+            raw_fields = line.split(self.TSHARK_SEPARATOR)
+            fields = self._polling_demo.interpret_tshark_output(raw_fields)
+            if fields:
+                print fields
+                new_user = wlan.User(**fields)
+                old_user = self.users.get(new_user.mac)
+                if old_user:
+                    old_user.merge(new_user)
+                    self.data_grid.SetItem(old_user)
+                else:
+                    self.users[new_user.mac] = new_user
+                    self.data_grid.SetItem(new_user)
 
     def _get_test_users(self):
         data = json.loads(TEST_USERS)
@@ -84,7 +111,10 @@ class WirelessDemoSet():
 
     def _enable_demo(self, demo, is_enabled):
         if not is_enabled:
-            print "XXX: implement demo disabling"
+            self.timer.Stop()
+            self.tshark.stop_capture()
+            self.tshark = None
+            self._polling_demo = None
             return
         # Put the interface into the correct mode.
         interface = self._get_interface()
@@ -94,9 +124,20 @@ class WirelessDemoSet():
         elif not demo.MONITOR_MODE and interface.monitor_mode:
             interface.disable_monitor_mode()
             self.wireless_refresh()
+        # Start TShark with the demo parameters.
+        self._polling_demo = demo
+        interface = self._get_interface()
+        interface = interface.monitor_mode or interface.interface_name
+        self.tshark = TShark(interface=interface,
+                             fields=demo.TSHARK_FIELDS,
+                             separator=self.TSHARK_SEPARATOR,
+                             read_filter=demo.TSHARK_READ_FILTER)
+        self.tshark.start_capture()
+        self.timer.Start(self.TSHARK_POLL_INTERVAL)
+
         # XXX: fake user data just to show something is happening
-        for user in self._get_test_users():
-            self.data_grid.SetItem(user)
+        #for user in self._get_test_users():
+        #    self.data_grid.SetItem(user)
 
     def _enable_network_panel(self, is_enabled):
         for control in (self.network_choice, self.network_refresh_button):
