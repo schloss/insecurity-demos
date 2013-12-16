@@ -168,13 +168,15 @@ class User():
                  hardware=None,
                  nickname=None,
                  ip=None,
-                 aps=None):
+                 aps=None,
+                 anonymous=True):
         self.mac = mac
         self.hardware = hardware
         self.nickname = nickname
         self.ip = ip
         self.aps = aps or []
         self.aps.sort()
+        self.anonymous = anonymous
 
     def merge(self, user):
         self.mac = self.mac or user.mac
@@ -185,3 +187,4 @@ class User():
             if ap not in self.aps:
                 self.aps.append(ap)
         self.aps.sort()
+        self.anonymous = self.anonymous or user.anonymous

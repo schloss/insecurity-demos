@@ -330,6 +330,16 @@ class WirelessDataList(wx.ListCtrl,
             if data.ip:
                 self.SetStringItem(i, 3, data.ip)
             if data.aps:
-                self.SetStringItem(i, 4, ', '.join(data.aps))
+                if data.anonymous:
+                    aps = ', '.join([self.obscure_text(x) for x in data.aps])
+                else:
+                    aps = ', '.join(data.aps)
+                self.SetStringItem(i, 4, aps)
         else:
             wx.ListCtrl.SetItem(self, data)
+
+    def obscure_text(self, text):
+        if len(text) > 6:
+            return "***%s***" % text[3:-3]
+        else:
+            return "*"*len(text)
