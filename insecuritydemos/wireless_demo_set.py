@@ -6,28 +6,6 @@ from demos import wireless_demos
 from tshark import TShark
 from Queue import Empty
 
-TEST_USERS ="""
-{"Users": [{"nickname" : "Alice",
-            "mac" : "84:3a:4b:0a:0e:14",
-            "hardware" : "Intel",
-            "ip" : "192.168.2.107"},
-           {"nickname" : "Bob",
-            "mac" : "14:9d:01:06:e2:cd",
-            "hardware" : "Macintosh",
-            "ip" : "192.168.2.102",
-            "aps" : ["sgnast"]},
-           {"nickname" : "Carol",
-            "mac" : "07:a1:18:ff:39:32",
-            "hardware" : "Atheros"},
-           {"mac" : "07:a1:18:ff:01:21",
-            "hardware" : "Atheros",
-            "aps" : ["LibyanEmbassyWifi2012",
-                     "att_starbucks39432",
-                     "54-CANARY-ST"]}
-            ]
-}
-"""
-
 class WirelessDemoSet():
     """A collection of wireless insecurity demos."""
 
@@ -59,6 +37,16 @@ class WirelessDemoSet():
     def initialize_data(self):
         self.wireless_refresh()
 
+    def merge_users(self, new_users):
+        for new_user in new_users:
+            user = self.users.get(new_user.mac)
+            if user:
+                user.merge(new_user)
+            else:
+                user = new_user
+                self.users[user.mac] = user
+            self.data_grid.SetItem(user)
+
     def destroy(self):
         for i in self.interfaces:
             if i.monitor_mode:
@@ -83,10 +71,6 @@ class WirelessDemoSet():
                 else:
                     self.users[new_user.mac] = new_user
                     self.data_grid.SetItem(new_user)
-
-    def _get_test_users(self):
-        data = json.loads(TEST_USERS)
-        return [wlan.User(**x) for x in data['Users']]
 
     def demo_names(self):
         return [demo.TITLE for demo in self.DEMOS]
@@ -134,10 +118,6 @@ class WirelessDemoSet():
                              read_filter=demo.TSHARK_READ_FILTER)
         self.tshark.start_capture()
         self.timer.Start(self.TSHARK_POLL_INTERVAL)
-
-        # XXX: fake user data just to show something is happening
-        #for user in self._get_test_users():
-        #    self.data_grid.SetItem(user)
 
     def _enable_network_panel(self, is_enabled):
         for control in (self.network_choice, self.network_refresh_button):

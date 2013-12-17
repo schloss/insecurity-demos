@@ -2,6 +2,8 @@
 
 """The main graphical user interface for Insecurity Demos"""
 
+import json
+import os
 import os.path
 import wx
 import wx.html
@@ -20,20 +22,30 @@ class InsecurityDemosFrame(wx.Frame):
     DEMO_LABEL = "Demo"
     NOTES_LABEL = "Notes"
     CHOOSE_DEMO_LABEL = "Select a demo..."
+    FILE_FILTER = "JSON files (*.json)|*.json|" \
+                  "Text files (*.txt)|*.txt|"   \
+                  "All files (*.*)|*.*"
 
     def __init__(self, parent, log):
         self.log = log # XXX : This should be used throughout
         wx.Frame.__init__(self, parent, title=self.TITLE)
         self.Bind(wx.EVT_CLOSE, self._quit)
-        self.current_demo_set = WirelessDemoSet(self)
+        self.wireless_demo_set = WirelessDemoSet(self)
+        self.current_demo_set = self.wireless_demo_set
 
         # Menu bar.
         MENU_QUIT = 101
+        MENU_IMPORT = 102
+        MENU_EXPORT = 103
         MENU_ABOUT = 201
         menu_bar = wx.MenuBar()
 
         # File menu.
         file_menu = wx.Menu()
+        file_menu.Append(MENU_IMPORT, "Import...\tCtrl+I")
+        self.Bind(wx.EVT_MENU, self._import, id=MENU_IMPORT)
+        file_menu.Append(MENU_EXPORT, "Export...\tCtrl+E")
+        self.Bind(wx.EVT_MENU, self._export, id=MENU_EXPORT)
         file_menu.Append(MENU_QUIT, "Quit\tCtrl+Q")
         self.Bind(wx.EVT_MENU, self._quit, id=MENU_QUIT)
         menu_bar.Append(file_menu, "File")
@@ -138,6 +150,38 @@ class InsecurityDemosFrame(wx.Frame):
                                   " add and edit this file:</p><p><code>%s"
                                   "</code></p></body></html>" %
                                   (demo, file_name))
+
+    def _import(self, event):
+        dialog = wx.FileDialog(self,
+                               message="Choose a file...",
+                               defaultDir=os.getcwd(),
+                               defaultFile="",
+                               wildcard=self.FILE_FILTER,
+                               style=wx.OPEN | wx.CHANGE_DIR)
+        if dialog.ShowModal() == wx.ID_OK:
+            path = dialog.GetPath()
+            f = open(path, 'r')
+            data = json.load(f)
+            f.close()
+            new_users = [wlan.User(**x) for x in data['Users']]
+            self.wireless_demo_set.merge_users(new_users)
+        dialog.Destroy()
+
+    def _export(self, event):
+        dialog = wx.FileDialog(self,
+                               message="Save file as...",
+                               defaultDir=os.getcwd(),
+                               defaultFile="",
+                               wildcard=self.FILE_FILTER,
+                               style=wx.SAVE)
+        if dialog.ShowModal() == wx.ID_OK:
+            path = dialog.GetPath()
+            users = [x.__dict__ for x in self.wireless_demo_set.users.values()]
+            data = {'Users': users}
+            f = open(path, 'w')
+            json.dump(data, f)
+            f.close()
+        dialog.Destroy()
 
     def _quit(self, event):
         self.current_demo_set.destroy()
