@@ -319,7 +319,10 @@ class WirelessDataList(wx.ListCtrl,
             wx.ListCtrl.SetItem(self, data)
 
     def obscure_text(self, text):
-        if len(text) > 6:
-            return "***%s***" % text[3:-3]
+        x = len(text)
+        if x > 7:
+            return text[:3] + "*"*(x-6) + text[-3:]
+        elif x > 2:
+            return text[0] + "*"*(x-2) + text[-1]
         else:
-            return "*"*len(text)
+            return "*"*x
