@@ -1,5 +1,9 @@
-import subprocess
+import os
 import string
+import subprocess
+
+OUI_FILE_PATH = '/usr/share/aircrack-ng/airodump-ng-oui.txt'
+MAC_HARDWARE = {}
 
 def enumerate_networks(interface):
     """Returns a list of all wireless networks found by the given interface."""
@@ -96,6 +100,22 @@ def interfaces_from_airmon_ng(blob):
         interfaces.append(Interface(*args))
     return interfaces
 
+def hardware_from_mac(mac):
+    if len(MAC_HARDWARE) == 0:
+        if os.path.isfile(OUI_FILE_PATH):
+            f = open(OUI_FILE_PATH, 'r')
+            for line in f:
+                segments = line.strip().split('\t')
+                prefix = segments[0].split()[0].replace('-',':').upper()
+                hardware = segments[-1]
+                MAC_HARDWARE[prefix] = hardware
+        else:
+            print ("Oops: the OUI file doesn't exist in the expected "
+                   "location (%s)" % OUI_FILE_PATH)
+            return None
+    prefix = mac[0:8].upper()
+    return MAC_HARDWARE.get(prefix, None)
+
 class Interface():
 
     def __init__(self,
@@ -171,7 +191,11 @@ class User():
                  aps=None,
                  anonymous=True):
         self.mac = mac
+        if self.mac:
+            self.mac = self.mac.upper()
         self.hardware = hardware
+        if self.mac and not self.hardware:
+            self.hardware = hardware_from_mac(self.mac)
         self.nickname = nickname
         self.ip = ip
         self.aps = aps or []
