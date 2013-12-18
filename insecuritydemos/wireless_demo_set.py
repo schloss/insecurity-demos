@@ -37,6 +37,11 @@ class WirelessDemoSet():
     def initialize_data(self):
         self.wireless_refresh()
 
+    def set_anonymity(self, anonymity):
+        for user in self.users.values():
+            user.anonymous = anonymity
+            self.data_grid.SetItem(user)
+
     def merge_users(self, new_users):
         for new_user in new_users:
             user = self.users.get(new_user.mac)
