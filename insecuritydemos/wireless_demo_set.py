@@ -217,6 +217,21 @@ class WirelessDemoSet():
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.data_grid, 1, wx.EXPAND, self.BORDER)
         self.data_panel.SetSizer(sizer)
+        self.data_grid.Bind(wx.EVT_LIST_END_LABEL_EDIT, self._item_edited)
+
+    def _get_grid_item(self, row):
+        mac = self.data_grid.GetItem(row, 0).GetText()
+        return self.users.get(mac, None)
+
+    def _item_edited(self, event):
+        row = event.m_itemIndex
+        col = event.m_col
+        text = event.m_item.GetText()
+        user = self._get_grid_item(row)
+        if user:
+            self.data_grid.export_to_user(col, text, user)
+        else:
+            print "Oops, something unexpected happened when editing."
 
     def wireless_refresh(self, event=None):
         current_interface = self.interface_choice.GetStringSelection()
@@ -287,6 +302,9 @@ class WirelessDataList(wx.ListCtrl,
                        listmixins.ListCtrlAutoWidthMixin,
                        listmixins.TextEditMixin):
 
+    APS_SEPARATOR = ', '
+    NICKNAME_COLUMN = 1
+
     def __init__(self, parent, ID, pos=wx.DefaultPosition,
                  size=wx.DefaultSize, style=0):
         wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
@@ -300,6 +318,11 @@ class WirelessDataList(wx.ListCtrl,
         self.SetFont(font)
         listmixins.ListCtrlAutoWidthMixin.__init__(self)
         listmixins.TextEditMixin.__init__(self)
+        self.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self._edit_started)
+
+    def _edit_started(self, event):
+        if event.m_col != self.NICKNAME_COLUMN:
+            event.Veto()
 
     def SetItem(self, data):
         if isinstance(data, wlan.User):
@@ -309,19 +332,27 @@ class WirelessDataList(wx.ListCtrl,
             if i < 0:
                 return
             if data.nickname:
-                self.SetStringItem(i, 1, data.nickname)
+                self.SetStringItem(i, self.NICKNAME_COLUMN, data.nickname)
             if data.hardware:
                 self.SetStringItem(i, 2, data.hardware)
             if data.ip:
                 self.SetStringItem(i, 3, data.ip)
             if data.aps:
                 if data.anonymous:
-                    aps = ', '.join([self.obscure_text(x) for x in data.aps])
+                    aps_list = [self.obscure_text(x) for x in data.aps]
+                    aps = self.APS_SEPARATOR.join(aps_list)
                 else:
-                    aps = ', '.join(data.aps)
+                    aps = self.APS_SEPARATOR.join(data.aps)
                 self.SetStringItem(i, 4, aps)
         else:
             wx.ListCtrl.SetItem(self, data)
+
+    def export_to_user(self, col, text, user):
+        if col == self.NICKNAME_COLUMN:
+            user.nickname = text
+        else:
+            print "Oops, can't edit user columns other than 'nickname'."
+        self.SetItem(user)
 
     def obscure_text(self, text):
         x = len(text)
