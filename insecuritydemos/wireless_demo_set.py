@@ -33,11 +33,13 @@ class WirelessDemoSet():
         self._init_control_panel(parent)
         self._init_data_panel(parent)
         self.users = {}
+        self.anonymity = True
 
     def initialize_data(self):
         self.wireless_refresh()
 
     def set_anonymity(self, anonymity):
+        self.anonymity = anonymity
         for user in self.users.values():
             user.anonymous = anonymity
             self.data_grid.SetItem(user)
@@ -70,7 +72,9 @@ class WirelessDemoSet():
                 print fields
                 new_user = wlan.User(**fields)
                 old_user = self.users.get(new_user.mac)
+                new_user.anonymity = self.anonymity
                 if old_user:
+                    old_user.anonymity = self.anonymity
                     old_user.merge(new_user)
                     self.data_grid.SetItem(old_user)
                 else:
