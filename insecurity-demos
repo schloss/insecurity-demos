@@ -6,7 +6,7 @@ Homepage: https://github.com/schloss/insecurity-demos
 Standards-Version: 3.6.2
 
 Package: insecurity-demos
-Version: 2013122100
+Version: 2013122600
 Maintainer: Schloss <schloss-admin@googlegroups.com>
 #Pre-Depends: <comma-separated list of packages>
 Depends: python, python-wxgtk2.8, gksu, aircrack-ng, tshark, wireshark

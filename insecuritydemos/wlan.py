@@ -100,6 +100,12 @@ def interfaces_from_airmon_ng(blob):
         interfaces.append(Interface(*args))
     return interfaces
 
+def has_oui_database():
+    return os.path.isfile(OUI_FILE_PATH)
+
+def update_oui_database():
+    os.system("airodump-ng-oui-update")
+
 def hardware_from_mac(mac):
     if len(MAC_HARDWARE) == 0:
         if os.path.isfile(OUI_FILE_PATH):

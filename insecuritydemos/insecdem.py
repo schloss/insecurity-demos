@@ -15,7 +15,7 @@ class InsecurityDemosFrame(wx.Frame):
     """The top-level GUI element of the Plover application."""
 
     # Class constants.
-    TITLE = "Insecurity Demos"
+    TITLE = "(In)security Demos"
     BORDER = 5
     START_LABEL = "Start"
     STOP_LABEL = "Stop"
@@ -39,6 +39,7 @@ class InsecurityDemosFrame(wx.Frame):
         MENU_EXPORT = 103
         MENU_ABOUT = 201
         MENU_ANONYMITY = 301
+        MENU_OUI_UPDATE = 401
         menu_bar = wx.MenuBar()
 
         # File menu.
@@ -56,6 +57,12 @@ class InsecurityDemosFrame(wx.Frame):
         prefs_menu.Append(MENU_ANONYMITY, "Toggle Anonymity\tCtrl+A")
         self.Bind(wx.EVT_MENU, self._toggle_anonymity, id=MENU_ANONYMITY)
         menu_bar.Append(prefs_menu, "Preferences")
+
+        # Tools menu.
+        tools_menu = wx.Menu()
+        tools_menu.Append(MENU_OUI_UPDATE, "Update OUI Database")
+        self.Bind(wx.EVT_MENU, self._update_oui_database, id=MENU_OUI_UPDATE)
+        menu_bar.Append(tools_menu, "Tools")
 
         # Help menu.
         help_menu = wx.Menu()
@@ -101,12 +108,33 @@ class InsecurityDemosFrame(wx.Frame):
         self.current_demo_set.initialize_data()
         self._populate_demo_choices()
         self._demo_selected()
+        if not wlan.has_oui_database():
+            dialog = wx.MessageDialog(self,
+                                      "You may need to run "
+                                      "\"Tools > Update OUI Database\" "
+                                      "before hardware vendors can be "
+                                      "determined from MAC addresses.",
+                                      self.TITLE,
+                                      wx.OK | wx.ICON_INFORMATION)
+            dialog.ShowModal()
+            dialog.Destroy()
+
 
     def _populate_demo_choices(self):
         choices = [self.CHOOSE_DEMO_LABEL] + self.current_demo_set.demo_names()
         self.demo_choice.SetItems(choices)
         self.demo_choice.SetSelection(0)
         self.GetSizer().Fit(self)
+
+    def _update_oui_database(self, event=None):
+        dialog = wx.MessageDialog(self,
+                                  "%s must be restarted for changes "
+                                  "to take effect." % self.TITLE,
+                                  self.TITLE,
+                                  wx.OK | wx.ICON_INFORMATION)
+        dialog.ShowModal()
+        wlan.update_oui_database()
+        dialog.Destroy()
 
     def _status_toggled(self, event):
         label = self.status_button.GetLabel()
