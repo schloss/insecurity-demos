@@ -304,14 +304,18 @@ class WirelessDemoSet():
 
 class WirelessDataList(wx.ListCtrl,
                        listmixins.ListCtrlAutoWidthMixin,
-                       listmixins.TextEditMixin):
+                       listmixins.TextEditMixin,
+                       listmixins.ColumnSorterMixin):
 
     APS_SEPARATOR = ', '
     NICKNAME_COLUMN = 1
+    NUMBER_OF_COLUMNS = 5
+    MAC_TO_INT = {}
 
     def __init__(self, parent, ID, pos=wx.DefaultPosition,
                  size=wx.DefaultSize, style=0):
         wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
+        self.itemDataMap = {}
         font = wx.Font(pointSize=11,
                        family=wx.FONTFAMILY_MODERN,
                        style=wx.FONTSTYLE_NORMAL,
@@ -322,19 +326,30 @@ class WirelessDataList(wx.ListCtrl,
         self.SetFont(font)
         listmixins.ListCtrlAutoWidthMixin.__init__(self)
         listmixins.TextEditMixin.__init__(self)
+        listmixins.ColumnSorterMixin.__init__(self, self.NUMBER_OF_COLUMNS)
         self.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self._edit_started)
 
     def _edit_started(self, event):
+        # Only allow edits in the nickname column.
         if event.m_col != self.NICKNAME_COLUMN:
             event.Veto()
 
     def SetItem(self, data):
         if isinstance(data, wlan.User):
+            item_key = self.__mac_to_int(data.mac)
             i = self.FindItem(-1, data.mac)
             if i < 0:
                 i = self.InsertStringItem(0, data.mac)
+                self.SetItemData(i, item_key)
             if i < 0:
                 return
+            column_data = (data.mac,
+                           data.nickname,
+                           data.hardware,
+                           data.ip,
+                           len(data.aps))
+            assert(len(column_data) == self.NUMBER_OF_COLUMNS)
+            self.itemDataMap[item_key] = column_data
             if data.nickname:
                 self.SetStringItem(i, self.NICKNAME_COLUMN, data.nickname)
             if data.hardware:
@@ -348,6 +363,10 @@ class WirelessDataList(wx.ListCtrl,
                 else:
                     aps = self.APS_SEPARATOR.join(data.aps)
                 self.SetStringItem(i, 4, aps)
+            # Re-sort list if it's already been sorted.
+            col, ascending = self.GetSortState()
+            if col >= 0:
+                self.SortListItems(col, ascending)
         else:
             wx.ListCtrl.SetItem(self, data)
 
@@ -366,3 +385,15 @@ class WirelessDataList(wx.ListCtrl,
             return text[0] + "*"*(x-2) + text[-1]
         else:
             return "*"*x
+
+    def __mac_to_int(self, mac):
+        if mac in self.MAC_TO_INT:
+            return self.MAC_TO_INT[mac]
+        else:
+            out = len(self.MAC_TO_INT)
+            self.MAC_TO_INT[out] = mac
+            return out
+
+    # Required for the ColumnSorterMixin.
+    def GetListCtrl(self):
+        return self
