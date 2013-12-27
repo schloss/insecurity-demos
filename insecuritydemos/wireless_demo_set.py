@@ -328,11 +328,24 @@ class WirelessDataList(wx.ListCtrl,
         listmixins.TextEditMixin.__init__(self)
         listmixins.ColumnSorterMixin.__init__(self, self.NUMBER_OF_COLUMNS)
         self.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self._edit_started)
+        self.Bind(wx.EVT_LIST_ITEM_SELECTED, self._item_selected)
+        self.Bind(wx.EVT_LIST_ITEM_DESELECTED, self._item_deselected)
 
     def _edit_started(self, event):
         # Only allow edits in the nickname column.
         if event.m_col != self.NICKNAME_COLUMN:
             event.Veto()
+
+    def _item_selected(self, event):
+        print "Selected!"
+        msg = "Clicked on (%d, %d)." % (event.m_itemIndex, event.m_col)
+        event.GetEventObject().SetToolTipString(msg)
+        event.Skip()
+
+    def _item_deselected(self, event):
+        print "Deselected!"
+        event.GetEventObject().SetToolTipString('')
+        event.Skip()
 
     def SetItem(self, data):
         if isinstance(data, wlan.User):
