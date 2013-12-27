@@ -1,7 +1,7 @@
 import json
 import wlan
 import wx
-import wx.lib.mixins.listctrl as listmixins
+from ObjectListView import ObjectListView, ColumnDefn
 from demos import wireless_demos
 from tshark import TShark
 from Queue import Empty
@@ -16,11 +16,6 @@ class WirelessDemoSet():
     NETWORK_INTERFACE_LABEL = "Network Interface"
     WIRELESS_NETWORK_LABEL = "Wireless Network"
     MONITOR_MODE_LABEL_OFF = "Monitor mode is OFF."
-    DATA_COLUMN_LABELS = ['MAC Address',
-                          'Nickname',
-                          'Wifi Card',
-                          'IP Address',
-                          'Wifi Networks Previously Used']
     TSHARK_SEPARATOR = ','
     TSHARK_POLL_INTERVAL = 500
 
@@ -32,27 +27,26 @@ class WirelessDemoSet():
         self.interfaces = []
         self._init_control_panel(parent)
         self._init_data_panel(parent)
-        self.users = {}
-        self.anonymity = True
+
+    def get_users(self):
+        return self.data_grid.GetObjects()
 
     def initialize_data(self):
         self.wireless_refresh()
 
-    def set_anonymity(self, anonymity):
-        self.anonymity = anonymity
-        for user in self.users.values():
-            user.anonymous = anonymity
-            self.data_grid.SetItem(user)
-
     def merge_users(self, new_users):
+        users_dict = {}
+        users = self.get_users()
+        for user in users:
+            users_dict[user.mac] = user
         for new_user in new_users:
-            user = self.users.get(new_user.mac)
+            user = users_dict.get(new_user.mac)
             if user:
                 user.merge(new_user)
             else:
                 user = new_user
-                self.users[user.mac] = user
-            self.data_grid.SetItem(user)
+                users_dict[user.mac] = user
+        self.data_grid.SetObjects(users_dict.values())
 
     def destroy(self):
         for i in self.interfaces:
@@ -71,15 +65,17 @@ class WirelessDemoSet():
             if fields:
                 print fields
                 new_user = wlan.User(**fields)
-                old_user = self.users.get(new_user.mac)
-                new_user.anonymity = self.anonymity
-                if old_user:
-                    old_user.anonymity = self.anonymity
-                    old_user.merge(new_user)
-                    self.data_grid.SetItem(old_user)
+                for user in self.get_users():
+                    if user.mac == new_user.mac:
+                        old_user = user
+                        break
                 else:
-                    self.users[new_user.mac] = new_user
-                    self.data_grid.SetItem(new_user)
+                    old_user = None
+                if old_user:
+                    old_user.merge(new_user)
+                    self.data_grid.RefreshObject(old_user)
+                else:
+                    self.data_grid.AddObject(new_user)
 
     def demo_names(self):
         return [demo.TITLE for demo in self.DEMOS]
@@ -208,34 +204,57 @@ class WirelessDemoSet():
 
     def _init_data_panel(self, parent):
         self.data_panel = wx.Panel(parent, -1, style=0)
-        self.data_grid = WirelessDataList(self.data_panel,
-                                          -1,
-                                          size=wx.Size(-1, 400),
-                                          style=(wx.LC_REPORT |
-                                                 wx.LC_VRULES |
-                                                 wx.SUNKEN_BORDER))
-
-        for i, label in enumerate(self.DATA_COLUMN_LABELS):
-            self.data_grid.InsertColumn(i, label)
-            self.data_grid.SetColumnWidth(i, 175)
+        self.data_grid = ObjectListView(self.data_panel,
+                                        wx.ID_ANY,
+                                        size=(-1,600),
+                                        style=(wx.LC_REPORT |
+                                               wx.LC_VRULES |
+                                               wx.SUNKEN_BORDER))
+        cols = [ColumnDefn("MAC Address", "left", 175, "mac",
+                           isEditable=False),
+                ColumnDefn("Nickname", "left", 175,
+                           valueGetter="nickname_to_string",
+                           valueSetter="nickname_from_string"),
+                ColumnDefn("Wifi Card", "left", 175, "hardware",
+                           isEditable=False),
+                ColumnDefn("IP Address", "left", 175, "ip",
+                           isEditable=False),
+                ColumnDefn("Wifi Networks Previously Used", "left", 175,
+                           valueGetter="aps_to_string",
+                           isEditable=False,
+                           minimumWidth=175,
+                           isSpaceFilling=True,
+                           checkStateGetter="anonymous")]
+        self.data_grid.SetColumns(cols)
+        self.data_grid.SetEmptyListMsg("Start a demo or use \"File > Import\""
+                                       " to populate this list.")
+        self.data_grid.cellEditMode = ObjectListView.CELLEDIT_DOUBLECLICK
+        font = wx.Font(pointSize=11,
+                       family=wx.FONTFAMILY_MODERN,
+                       style=wx.FONTSTYLE_NORMAL,
+                       weight=wx.FONTWEIGHT_NORMAL,
+                       underline=False,
+                       face="",
+                       encoding=wx.FONTENCODING_DEFAULT)
+        self.data_grid.SetFont(font)
         sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(self.data_grid, 1, wx.EXPAND, self.BORDER)
+        sizer.Add(self.data_grid, 1, wx.ALL|wx.EXPAND, self.BORDER)
         self.data_panel.SetSizer(sizer)
-        self.data_grid.Bind(wx.EVT_LIST_END_LABEL_EDIT, self._item_edited)
+        self.data_grid.Bind(wx.EVT_LIST_ITEM_SELECTED, self._item_selected)
+        self.data_grid.Bind(wx.EVT_LIST_ITEM_DESELECTED, self._item_deselected)
 
-    def _get_grid_item(self, row):
-        mac = self.data_grid.GetItem(row, 0).GetText()
-        return self.users.get(mac, None)
-
-    def _item_edited(self, event):
-        row = event.m_itemIndex
-        col = event.m_col
-        text = event.m_item.GetText()
-        user = self._get_grid_item(row)
+    def _item_selected(self, event):
+        user = self.data_grid.GetSelectedObject()
+        ui = event.GetEventObject()
         if user:
-            self.data_grid.export_to_user(col, text, user)
+            ui.SetToolTipString(user.aps_to_string('\n'))
         else:
-            print "Oops, something unexpected happened when editing."
+            ui.SetToolTip(None)
+        event.Skip()
+
+    def _item_deselected(self, event):
+        event.GetEventObject().SetToolTip(None)
+        event.Skip()
 
     def wireless_refresh(self, event=None):
         current_interface = self.interface_choice.GetStringSelection()
@@ -300,113 +319,3 @@ class WirelessDemoSet():
                     self.network_choice.SetStringSelection(current_network)
                 else:
                     self.network_choice.SetSelection(0)
-
-
-class WirelessDataList(wx.ListCtrl,
-                       listmixins.ListCtrlAutoWidthMixin,
-                       listmixins.TextEditMixin,
-                       listmixins.ColumnSorterMixin):
-
-    APS_SEPARATOR = ', '
-    NICKNAME_COLUMN = 1
-    NUMBER_OF_COLUMNS = 5
-    MAC_TO_INT = {}
-
-    def __init__(self, parent, ID, pos=wx.DefaultPosition,
-                 size=wx.DefaultSize, style=0):
-        wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
-        self.itemDataMap = {}
-        font = wx.Font(pointSize=11,
-                       family=wx.FONTFAMILY_MODERN,
-                       style=wx.FONTSTYLE_NORMAL,
-                       weight=wx.FONTWEIGHT_NORMAL,
-                       underline=False,
-                       face="",
-                       encoding=wx.FONTENCODING_DEFAULT)
-        self.SetFont(font)
-        listmixins.ListCtrlAutoWidthMixin.__init__(self)
-        listmixins.TextEditMixin.__init__(self)
-        listmixins.ColumnSorterMixin.__init__(self, self.NUMBER_OF_COLUMNS)
-        self.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self._edit_started)
-        self.Bind(wx.EVT_LIST_ITEM_SELECTED, self._item_selected)
-        self.Bind(wx.EVT_LIST_ITEM_DESELECTED, self._item_deselected)
-
-    def _edit_started(self, event):
-        # Only allow edits in the nickname column.
-        if event.m_col != self.NICKNAME_COLUMN:
-            event.Veto()
-
-    def _item_selected(self, event):
-        print "Selected!"
-        msg = "Clicked on (%d, %d)." % (event.m_itemIndex, event.m_col)
-        event.GetEventObject().SetToolTipString(msg)
-        event.Skip()
-
-    def _item_deselected(self, event):
-        print "Deselected!"
-        event.GetEventObject().SetToolTipString('')
-        event.Skip()
-
-    def SetItem(self, data):
-        if isinstance(data, wlan.User):
-            item_key = self.__mac_to_int(data.mac)
-            i = self.FindItem(-1, data.mac)
-            if i < 0:
-                i = self.InsertStringItem(0, data.mac)
-                self.SetItemData(i, item_key)
-            if i < 0:
-                return
-            column_data = (data.mac,
-                           data.nickname,
-                           data.hardware,
-                           data.ip,
-                           len(data.aps))
-            assert(len(column_data) == self.NUMBER_OF_COLUMNS)
-            self.itemDataMap[item_key] = column_data
-            if data.nickname:
-                self.SetStringItem(i, self.NICKNAME_COLUMN, data.nickname)
-            if data.hardware:
-                self.SetStringItem(i, 2, data.hardware)
-            if data.ip:
-                self.SetStringItem(i, 3, data.ip)
-            if data.aps:
-                if data.anonymous:
-                    aps_list = [self.obscure_text(x) for x in data.aps]
-                    aps = self.APS_SEPARATOR.join(aps_list)
-                else:
-                    aps = self.APS_SEPARATOR.join(data.aps)
-                self.SetStringItem(i, 4, aps)
-            # Re-sort list if it's already been sorted.
-            col, ascending = self.GetSortState()
-            if col >= 0:
-                self.SortListItems(col, ascending)
-        else:
-            wx.ListCtrl.SetItem(self, data)
-
-    def export_to_user(self, col, text, user):
-        if col == self.NICKNAME_COLUMN:
-            user.nickname = text
-        else:
-            print "Oops, can't edit user columns other than 'nickname'."
-        self.SetItem(user)
-
-    def obscure_text(self, text):
-        x = len(text)
-        if x > 7:
-            return text[:3] + "*"*(x-6) + text[-3:]
-        elif x > 2:
-            return text[0] + "*"*(x-2) + text[-1]
-        else:
-            return "*"*x
-
-    def __mac_to_int(self, mac):
-        if mac in self.MAC_TO_INT:
-            return self.MAC_TO_INT[mac]
-        else:
-            out = len(self.MAC_TO_INT)
-            self.MAC_TO_INT[out] = mac
-            return out
-
-    # Required for the ColumnSorterMixin.
-    def GetListCtrl(self):
-        return self

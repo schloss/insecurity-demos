@@ -38,7 +38,6 @@ class InsecurityDemosFrame(wx.Frame):
         MENU_IMPORT = 102
         MENU_EXPORT = 103
         MENU_ABOUT = 201
-        MENU_ANONYMITY = 301
         MENU_OUI_UPDATE = 401
         menu_bar = wx.MenuBar()
 
@@ -51,12 +50,6 @@ class InsecurityDemosFrame(wx.Frame):
         file_menu.Append(MENU_QUIT, "Quit\tCtrl+Q")
         self.Bind(wx.EVT_MENU, self._quit, id=MENU_QUIT)
         menu_bar.Append(file_menu, "File")
-
-        # Preferences menu.
-        prefs_menu = wx.Menu()
-        prefs_menu.Append(MENU_ANONYMITY, "Toggle Anonymity\tCtrl+A")
-        self.Bind(wx.EVT_MENU, self._toggle_anonymity, id=MENU_ANONYMITY)
-        menu_bar.Append(prefs_menu, "Preferences")
 
         # Tools menu.
         tools_menu = wx.Menu()
@@ -104,7 +97,6 @@ class InsecurityDemosFrame(wx.Frame):
         self.SetRect(AdjustRectToScreen(self.GetRect()))
 
         # Load data.
-        self.anonymity = True
         self.current_demo_set.initialize_data()
         self._populate_demo_choices()
         self._demo_selected()
@@ -187,10 +179,6 @@ class InsecurityDemosFrame(wx.Frame):
                                   "</code></p></body></html>" %
                                   (demo, file_name))
 
-    def _toggle_anonymity(self, event):
-        self.anonymity = not self.anonymity
-        self.wireless_demo_set.set_anonymity(self.anonymity)
-
     def _import(self, event):
         dialog = wx.FileDialog(self,
                                message="Choose a file...",
@@ -216,7 +204,7 @@ class InsecurityDemosFrame(wx.Frame):
                                style=wx.SAVE)
         if dialog.ShowModal() == wx.ID_OK:
             path = dialog.GetPath()
-            users = [x.__dict__ for x in self.wireless_demo_set.users.values()]
+            users = [x.__dict__ for x in self.wireless_demo_set.get_users()]
             data = {'Users': users}
             f = open(path, 'w')
             json.dump(data, f)

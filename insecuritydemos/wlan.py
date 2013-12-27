@@ -217,4 +217,27 @@ class User():
             if ap not in self.aps:
                 self.aps.append(ap)
         self.aps.sort()
-        self.anonymous = self.anonymous or user.anonymous
+        # Don't change the anonymity of this user.
+
+    def nickname_to_string(self):
+        return self.nickname or ''
+
+    def nickname_from_string(self, x):
+        self.nickname = x or None
+        return self.nickname
+
+    def aps_to_string(self, joiner=', '):
+        if self.anonymous:
+            aps_list = [self.obscure_text(x) for x in self.aps]
+        else:
+            aps_list = self.aps
+        return joiner.join(aps_list)
+
+    def obscure_text(self, text):
+        x = len(text)
+        if x > 7:
+            return text[:3] + "*"*(x-6) + text[-3:]
+        elif x > 2:
+            return text[0] + "*"*(x-2) + text[-1]
+        else:
+            return "*"*x
