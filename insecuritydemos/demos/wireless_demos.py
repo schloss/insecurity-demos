@@ -14,3 +14,8 @@ class AccessPointDemo():
             if probe:
                 out['aps'] = [probe]
         return out
+
+class HttpBasicAuthSniffDemo():
+    TITLE = "Basic Auth Sniffer"
+    MONITOR_MODE = True
+    WIRELESS_NETWORKS_CONTROL = True
