@@ -1,7 +1,7 @@
 import json
 import wlan
 import wx
-from ObjectListView import ObjectListView, ColumnDefn
+import ObjectListView as olv
 from demos import wireless_demos
 from tshark import TShark
 from Queue import Empty
@@ -227,31 +227,35 @@ class WirelessDemoSet():
 
     def _init_data_panel(self, parent):
         self.data_panel = wx.Panel(parent, -1, style=0)
-        self.data_grid = ObjectListView(self.data_panel,
-                                        wx.ID_ANY,
-                                        size=(-1,600),
-                                        style=(wx.LC_REPORT |
-                                               wx.LC_VRULES |
-                                               wx.SUNKEN_BORDER))
-        cols = [ColumnDefn("MAC Address", "left", 175, "mac",
-                           isEditable=False),
-                ColumnDefn("Nickname", "left", 175,
-                           valueGetter="nickname_to_string",
-                           valueSetter="nickname_from_string"),
-                ColumnDefn("Wifi Card", "left", 175, "hardware",
-                           isEditable=False),
-                ColumnDefn("IP Address", "left", 175, "ip",
-                           isEditable=False),
-                ColumnDefn("Wifi Networks Previously Used", "left", 175,
-                           valueGetter="aps_to_string",
-                           isEditable=False,
-                           minimumWidth=175,
-                           isSpaceFilling=True,
-                           checkStateGetter="anonymous")]
+        self.data_grid = olv.ObjectListView(self.data_panel,
+                                            wx.ID_ANY,
+                                            size=(-1,600),
+                                            style=(wx.LC_REPORT |
+                                                   wx.LC_VRULES |
+                                                   wx.SUNKEN_BORDER))
+        networks_column = olv.ColumnDefn("Wifi Networks Previously Used",
+                                         "left",
+                                         175,
+                                         valueGetter="aps_to_string",
+                                         isEditable=False,
+                                         minimumWidth=175,
+                                         isSpaceFilling=True,
+                                         checkStateGetter="anonymous")
+        cols = [olv.ColumnDefn("MAC Address", "left", 175, "mac",
+                               isEditable=False),
+                olv.ColumnDefn("Nickname", "left", 175,
+                               valueGetter="nickname_to_string",
+                               valueSetter="nickname_from_string"),
+                olv.ColumnDefn("Wifi Card", "left", 175, "hardware",
+                               isEditable=False),
+                olv.ColumnDefn("IP Address", "left", 175, "ip",
+                               isEditable=False),
+                networks_column]
+        self.networks_column_index = cols.index(networks_column)
         self.data_grid.SetColumns(cols)
         self.data_grid.SetEmptyListMsg("Start a demo or use \"File > Import\""
                                        " to populate this list.")
-        self.data_grid.cellEditMode = ObjectListView.CELLEDIT_DOUBLECLICK
+        self.data_grid.cellEditMode = olv.ObjectListView.CELLEDIT_DOUBLECLICK
         font = wx.Font(pointSize=11,
                        family=wx.FONTFAMILY_MODERN,
                        style=wx.FONTSTYLE_NORMAL,
@@ -265,6 +269,14 @@ class WirelessDemoSet():
         self.data_panel.SetSizer(sizer)
         self.data_grid.Bind(wx.EVT_LIST_ITEM_SELECTED, self._item_selected)
         self.data_grid.Bind(wx.EVT_LIST_ITEM_DESELECTED, self._item_deselected)
+        self.data_grid.Bind(olv.EVT_SORT, self._column_sort)
+
+    # Sort by number of networks, not string representation of networks.
+    def _column_sort(self, event):
+        if event.sortColumnIndex == self.networks_column_index:
+            self.data_grid.SortListItemsBy(length_sorter,
+                                           event.sortAscending)
+            event.wasHandled = True
 
     def _item_selected(self, event):
         user = self.data_grid.GetSelectedObject()
@@ -362,3 +374,21 @@ class WirelessDemoSet():
             password = dialog.GetValue()
             network.password = password
         dialog.Destroy()
+
+def length_sorter(x, y):
+    """Sort first by length and then by string representation."""
+    x_len = len(x.aps)
+    y_len = len(y.aps)
+    if x_len < y_len:
+        return -1
+    elif x_len > y_len:
+        return 1
+    else:
+        x_str = x.aps_to_string()
+        y_str = y.aps_to_string()
+        if x_str < y_str:
+            return -1
+        elif x_str > y_str:
+            return 1
+        else:
+            return 0
