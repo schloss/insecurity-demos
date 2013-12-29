@@ -10,9 +10,11 @@ class WirelessDemoSet():
     """A collection of wireless insecurity demos."""
 
     # Class constants.
-    DEMOS = (wireless_demos.AccessPointDemo(),)
+    DEMOS = (wireless_demos.AccessPointDemo(),
+             wireless_demos.HttpBasicAuthSniffDemo(),)
     BORDER = 5
     REFRESH_LABEL = "Refresh"
+    PASSWORD_LABEL = "Password"
     NETWORK_INTERFACE_LABEL = "Network Interface"
     WIRELESS_NETWORK_LABEL = "Wireless Network"
     MONITOR_MODE_LABEL_OFF = "Monitor mode is OFF."
@@ -25,6 +27,7 @@ class WirelessDemoSet():
         self.timer.Bind(wx.EVT_TIMER, self._poll_tshark)
         self.tshark = None
         self.interfaces = []
+        self.networks = []
         self._init_control_panel(parent)
         self._init_data_panel(parent)
 
@@ -32,7 +35,7 @@ class WirelessDemoSet():
         return self.data_grid.GetObjects()
 
     def initialize_data(self):
-        self.wireless_refresh()
+        self._interface_refresh()
 
     def merge_users(self, new_users):
         users_dict = {}
@@ -109,10 +112,10 @@ class WirelessDemoSet():
         interface = self._get_interface()
         if demo.MONITOR_MODE and not interface.monitor_mode:
             interface.enable_monitor_mode()
-            self.wireless_refresh()
+            self._interface_refresh()
         elif not demo.MONITOR_MODE and interface.monitor_mode:
             interface.disable_monitor_mode()
-            self.wireless_refresh()
+            self._interface_refresh()
         # Start TShark with the demo parameters.
         self._polling_demo = demo
         interface = self._get_interface()
@@ -125,8 +128,12 @@ class WirelessDemoSet():
         self.timer.Start(self.TSHARK_POLL_INTERVAL)
 
     def _enable_network_panel(self, is_enabled):
-        for control in (self.network_choice, self.network_refresh_button):
+        for control in (self.network_choice,
+                        self.network_refresh_button,
+                        self.network_password_button):
             control.Enable(is_enabled)
+        if is_enabled:
+            self._network_selected()
 
     def _enable_interface_panel(self, is_enabled):
         for control in (self.monitor_mode_label,
@@ -148,6 +155,13 @@ class WirelessDemoSet():
                 return i
         return None
 
+    def _get_network(self):
+        name = self.network_choice.GetStringSelection()
+        for n in self.networks:
+            if str(n) == name:
+                return n
+        return None
+
     def _init_control_panel(self, parent):
         self.control_panel = wx.Panel(parent, -1)
 
@@ -160,7 +174,7 @@ class WirelessDemoSet():
         self.interface_refresh_button = wx.Button(self.control_panel,
                                                   label=self.REFRESH_LABEL)
         self.interface_refresh_button.Bind(wx.EVT_BUTTON,
-                                           self.wireless_refresh)
+                                           self._interface_refresh)
         self.monitor_mode_label = wx.StaticText(self.control_panel, -1,
                                                 self.MONITOR_MODE_LABEL_OFF)
 
@@ -168,9 +182,15 @@ class WirelessDemoSet():
         self.network_choice = wx.Choice(self.control_panel, -1,
                                         size=wx.Size(300, -1),
                                         choices=[])
+        self.network_choice.Bind(wx.EVT_CHOICE,
+                                 self._network_selected)
         self.network_refresh_button = wx.Button(self.control_panel,
                                                 label=self.REFRESH_LABEL)
-        self.network_refresh_button.Bind(wx.EVT_BUTTON, self.network_refresh)
+        self.network_refresh_button.Bind(wx.EVT_BUTTON, self._network_refresh)
+        self.network_password_button = wx.Button(self.control_panel,
+                                                 label=self.PASSWORD_LABEL)
+        self.network_password_button.Bind(wx.EVT_BUTTON,
+                                          self._network_password_input)
 
         # Layout.
         sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -197,6 +217,9 @@ class WirelessDemoSet():
                           flag=flags,
                           border=self.BORDER)
         network_sizer.Add(self.network_refresh_button,
+                          flag=flags,
+                          border=self.BORDER)
+        network_sizer.Add(self.network_password_button,
                           flag=flags,
                           border=self.BORDER)
         sizer.Add(network_sizer, flag=flags, border=self.BORDER)
@@ -256,7 +279,7 @@ class WirelessDemoSet():
         event.GetEventObject().SetToolTip(None)
         event.Skip()
 
-    def wireless_refresh(self, event=None):
+    def _interface_refresh(self, event=None):
         current_interface = self.interface_choice.GetStringSelection()
         new_interfaces = wlan.enumerate_interfaces()
 
@@ -305,17 +328,37 @@ class WirelessDemoSet():
             label = self.MONITOR_MODE_LABEL_OFF
         self.monitor_mode_label.SetLabel(label)
 
-    def network_refresh(self, event=None):
+    def _network_selected(self, event=None):
+        network = self._get_network()
+        self.network_password_button.Enable(network != None)
+
+    def _network_refresh(self, event=None):
         interface = self.interface_choice.GetStringSelection()
         if not interface:
             self.network_choice.SetItems([])
         else:
             current_network = self.network_choice.GetStringSelection()
-            networks = wlan.enumerate_networks(interface)
-            network_names = map(str, networks)
+            self.networks = wlan.enumerate_networks(interface)
+            network_names = map(str, self.networks)
             self.network_choice.SetItems(network_names)
             if network_names:
                 if current_network in network_names:
                     self.network_choice.SetStringSelection(current_network)
                 else:
                     self.network_choice.SetSelection(0)
+        self._network_selected()
+
+    def _network_password_input(self, event=None):
+        network = self._get_network()
+        if not network:
+            return
+        dialog = wx.PasswordEntryDialog(self.control_panel,
+                                        "Enter a password for the \"%s\""
+                                        " network." % network.essid,
+                                        "Network Password",
+                                        network.password or '')
+        status = dialog.ShowModal()
+        if status == wx.ID_OK:
+            password = dialog.GetValue()
+            network.password = password
+        dialog.Destroy()

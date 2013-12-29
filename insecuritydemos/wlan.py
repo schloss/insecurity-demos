@@ -178,11 +178,13 @@ class Network():
                  essid,
                  bssid=None,
                  channel=None,
-                 security=None):
+                 security=None,
+                 password=None):
         self.essid = essid
         self.bssid = bssid
         self.channel = channel
         self.security = security
+        self.password = password
 
     def __str__(self):
         return "%s (%s)" % (self.essid, self.bssid)
