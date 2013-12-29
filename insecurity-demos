@@ -15,6 +15,7 @@ Depends: python, python-pip, python-wxgtk2.8, gksu, aircrack-ng, tshark, wiresha
 # Provides: <comma-separated list of packages>
 # Replaces: <comma-separated list of packages>
 Postinst: post-install.sh
+Prerm: pre-remove.sh
 Architecture: all
 #Copyright: COPYING
 #Changelog: CHANGES
