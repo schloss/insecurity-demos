@@ -314,6 +314,13 @@ class WirelessDemoSet():
                 if name == j.monitor_mode:
                     new_interfaces.remove(i)
 
+        # Also, don't list anything that even looks like a monitoring
+        # interface. Whether an interface is actually in monitor mode
+        # could be better verified using something like iwconfig.
+        for i in new_interfaces:
+            if i.interface_name.startswith('mon'):
+                new_interfaces.remove(i)
+
         self.interfaces = new_interfaces
 
         # Construct a list of the new interface names, taking care to
