@@ -189,15 +189,33 @@ class Network():
     def __str__(self):
         return "%s (%s)" % (self.essid, self.bssid)
 
-class User():
+class Credential():
+
+    SEPARATOR = ":"
+
+    def __init__(self, username, password):
+        self.username = username
+        self.password = password
+
+    def __str__(self):
+        return "%s%s%s" % (self.username, self.SEPARATOR, self.password)
+
+    @staticmethod
+    def from_string(s):
+        username, password = s.split(Credential.SEPARATOR, 1)
+        return Credential(username, password)
+
+class User(object):
 
     def __init__(self,
                  mac=None,
                  hardware=None,
                  nickname=None,
                  ip=None,
+                 hostname=None,
                  aps=None,
-                 anonymous=True):
+                 anonymous=True,
+                 credentials=None):
         self.mac = mac
         if self.mac:
             self.mac = self.mac.upper()
@@ -206,20 +224,49 @@ class User():
             self.hardware = hardware_from_mac(self.mac)
         self.nickname = nickname
         self.ip = ip
+        self.hostname = hostname
         self.aps = aps or []
         self.aps.sort()
         self.anonymous = anonymous
+        self.credentials = credentials or []
+        self.credentials.sort()
+        if all([type(x) in (str, unicode) for x in self.credentials]):
+            self.credentials = map(Credential.from_string, self.credentials)
+        # Unpersisted parameters.
+        self.current_network = None
+        self.sniffable = False
 
     def merge(self, user):
         self.mac = self.mac or user.mac
         self.hardware = self.hardware or user.hardware
         self.nickname = user.nickname or self.nickname
         self.ip = user.ip or self.ip
+        self.hostname = user.hostname or self.hostname
         for ap in user.aps:
             if ap not in self.aps:
                 self.aps.append(ap)
         self.aps.sort()
+        for credential in user.credentials:
+            if credential not in self.credentials:
+                self.credentials.append(credential)
+        self.credentials.sort()
+        self.current_network = user.current_network or self.current_network
+        self.sniffable = user.sniffable or self.sniffable
         # Don't change the anonymity of this user.
+
+    def export(self):
+        """Returns a dict containing all data that should be persisted."""
+        out = {}
+        for attr in ('mac',
+                     'hardware',
+                     'nickname',
+                     'ip',
+                     'hostname',
+                     'aps',
+                     'anonymous',
+                     'credentials',):
+            out[attr] = self.__getattribute__(attr)
+        return out
 
     def nickname_to_string(self):
         return self.nickname or ''
@@ -230,12 +277,21 @@ class User():
 
     def aps_to_string(self, joiner=', '):
         if self.anonymous:
-            aps_list = [self.obscure_text(x) for x in self.aps]
+            seq = [self._obscure_text(x) for x in self.aps]
         else:
-            aps_list = self.aps
-        return joiner.join(aps_list)
+            seq = self.aps
+        return joiner.join(seq)
 
-    def obscure_text(self, text):
+    def credentials_to_string(self, joiner=', '):
+        if self.anonymous:
+            seq = [Credential.SEPARATOR.join((self._obscure_text(x.username),
+                                              self._obscure_text(x.password))) \
+                   for x in self.credentials]
+        else:
+            seq = map(str, self.credentials)
+        return joiner.join(seq)
+
+    def _obscure_text(self, text):
         x = len(text)
         if x > 7:
             return text[:3] + "*"*(x-6) + text[-3:]

@@ -204,7 +204,7 @@ class InsecurityDemosFrame(wx.Frame):
                                style=wx.SAVE)
         if dialog.ShowModal() == wx.ID_OK:
             path = dialog.GetPath()
-            users = [x.__dict__ for x in self.wireless_demo_set.get_users()]
+            users = [x.export() for x in self.wireless_demo_set.get_users()]
             data = {'Users': users}
             f = open(path, 'w')
             json.dump(data, f)
