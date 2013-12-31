@@ -175,7 +175,7 @@ class Interface():
 class Network():
 
     def __init__(self,
-                 essid,
+                 essid=None,
                  bssid=None,
                  channel=None,
                  security=None,
@@ -188,6 +188,12 @@ class Network():
 
     def __str__(self):
         return "%s (%s)" % (self.essid, self.bssid)
+
+    def __repr__(self):
+        return ("Network(essid=%s, bssid=%s, channel=%s, "
+                "security=%s, password=%s)" %
+                (self.essid, self.bssid, self.channel,
+                 self.security, self.password))
 
 class Credential():
 

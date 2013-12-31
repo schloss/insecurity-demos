@@ -373,6 +373,10 @@ class WirelessDemoSet():
         else:
             current_network = self.network_choice.GetStringSelection()
             self.networks = wlan.enumerate_networks(interface)
+            # Show only WPA and open networks.
+            for n in self.networks:
+                if not all(['WPA' in s for s in n.security]):
+                    self.networks.remove(n)
             network_names = map(str, self.networks)
             self.network_choice.SetItems(network_names)
             if network_names:
