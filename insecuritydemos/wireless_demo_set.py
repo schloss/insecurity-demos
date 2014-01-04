@@ -1,4 +1,5 @@
 import json
+import os
 import wlan
 import wx
 import ObjectListView as olv
@@ -18,6 +19,10 @@ class WirelessDemoSet():
     NETWORK_INTERFACE_LABEL = "Network Interface"
     WIRELESS_NETWORK_LABEL = "Wireless Network"
     MONITOR_MODE_LABEL_OFF = "Monitor mode is OFF."
+    IMAGE_LOCKED = os.path.join(os.path.dirname(__file__),
+                                'locked_small.png')
+    IMAGE_UNLOCKED = os.path.join(os.path.dirname(__file__),
+                                  'unlocked_small.png')
     TSHARK_SEPARATOR = ','
     TSHARK_POLL_INTERVAL = 500
 
@@ -232,6 +237,10 @@ class WirelessDemoSet():
                                             style=(wx.LC_REPORT |
                                                    wx.LC_VRULES |
                                                    wx.SUNKEN_BORDER))
+        self.data_grid.AddNamedImages("locked",
+                                      wx.Bitmap(self.IMAGE_LOCKED))
+        self.data_grid.AddNamedImages("unlocked",
+                                      wx.Bitmap(self.IMAGE_UNLOCKED))
         creds_column = olv.ColumnDefn("Credentials",
                                       "left",
                                       175,
@@ -248,7 +257,12 @@ class WirelessDemoSet():
                                          minimumWidth=175,
                                          isSpaceFilling=True,
                                          checkStateGetter="anonymous")
-        cols = [olv.ColumnDefn("MAC Address", "left", 175, "mac",
+        cols = [olv.ColumnDefn(title="?",
+                               fixedWidth=24,
+                               align="centre",
+                               isEditable=False,
+                               imageGetter=locked_getter),
+                olv.ColumnDefn("MAC Address", "left", 175, "mac",
                                isEditable=False),
                 olv.ColumnDefn("Nickname", "left", 175,
                                valueGetter="nickname_to_string",
@@ -418,3 +432,9 @@ def length_sorter(x, y):
             return 1
         else:
             return 0
+
+def locked_getter(user):
+    if user.sniffable:
+        return "unlocked"
+    else:
+        return "locked"
