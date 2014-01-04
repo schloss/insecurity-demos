@@ -258,8 +258,8 @@ class WirelessDemoSet():
                                          isSpaceFilling=True,
                                          checkStateGetter="anonymous")
         cols = [olv.ColumnDefn(title="?",
-                               fixedWidth=24,
-                               align="centre",
+                               fixedWidth=40,
+                               align="left",
                                isEditable=False,
                                imageGetter=locked_getter),
                 olv.ColumnDefn("MAC Address", "left", 175, "mac",
