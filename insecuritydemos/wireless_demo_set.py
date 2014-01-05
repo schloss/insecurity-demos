@@ -2,10 +2,18 @@ import json
 import os
 import wlan
 import wx
+import wx.lib.newevent
 import ObjectListView as olv
 from demos import wireless_demos
 from tshark import TShark
 from Queue import Empty
+
+IMAGE_LOCKED = os.path.join(os.path.dirname(__file__),
+                            'locked_small.png')
+IMAGE_UNLOCKED = os.path.join(os.path.dirname(__file__),
+                              'unlocked_small.png')
+
+UserModifiedEvent, EVT_USER_MODIFIED = wx.lib.newevent.NewEvent()
 
 class WirelessDemoSet():
     """A collection of wireless insecurity demos."""
@@ -19,10 +27,6 @@ class WirelessDemoSet():
     NETWORK_INTERFACE_LABEL = "Network Interface"
     WIRELESS_NETWORK_LABEL = "Wireless Network"
     MONITOR_MODE_LABEL_OFF = "Monitor mode is OFF."
-    IMAGE_LOCKED = os.path.join(os.path.dirname(__file__),
-                                'locked_small.png')
-    IMAGE_UNLOCKED = os.path.join(os.path.dirname(__file__),
-                                  'unlocked_small.png')
     TSHARK_SEPARATOR = ','
     TSHARK_POLL_INTERVAL = 500
 
@@ -238,9 +242,9 @@ class WirelessDemoSet():
                                                    wx.LC_VRULES |
                                                    wx.SUNKEN_BORDER))
         self.data_grid.AddNamedImages("locked",
-                                      wx.Bitmap(self.IMAGE_LOCKED))
+                                      wx.Bitmap(IMAGE_LOCKED))
         self.data_grid.AddNamedImages("unlocked",
-                                      wx.Bitmap(self.IMAGE_UNLOCKED))
+                                      wx.Bitmap(IMAGE_UNLOCKED))
         creds_column = olv.ColumnDefn("Credentials",
                                       "left",
                                       175,
@@ -249,7 +253,7 @@ class WirelessDemoSet():
                                       minimumWidth=175,
                                       isSpaceFilling=True,
                                       checkStateGetter="anonymous")
-        networks_column = olv.ColumnDefn("Wifi Networks Previously Used",
+        networks_column = olv.ColumnDefn("Previous Wifi Networks",
                                          "left",
                                          175,
                                          valueGetter="aps_to_string",
@@ -267,7 +271,7 @@ class WirelessDemoSet():
                 olv.ColumnDefn("Nickname", "left", 175,
                                valueGetter="nickname_to_string",
                                valueSetter="nickname_from_string"),
-                olv.ColumnDefn("Wifi Card", "left", 175, "hardware",
+                olv.ColumnDefn("Wifi Chipset", "left", 175, "hardware",
                                isEditable=False),
                 olv.ColumnDefn("IP Address", "left", 175, "ip",
                                isEditable=False),
@@ -297,9 +301,10 @@ class WirelessDemoSet():
         self.data_panel.SetSizer(sizer)
         self.data_grid.Bind(wx.EVT_LIST_ITEM_SELECTED, self._item_selected)
         self.data_grid.Bind(wx.EVT_LIST_ITEM_DESELECTED, self._item_deselected)
+        self.data_grid.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self._item_activated)
         self.data_grid.Bind(olv.EVT_SORT, self._column_sort)
 
-    # Sort by number of networks, not string representation of networks.
+    # Sort by number of elements, not string representation of list.
     def _column_sort(self, event):
         if event.sortColumnIndex in (self.credentials_column_index,
                                      self.networks_column_index):
@@ -319,6 +324,16 @@ class WirelessDemoSet():
     def _item_deselected(self, event):
         event.GetEventObject().SetToolTip(None)
         event.Skip()
+
+    def _item_activated(self, event):
+        user = self.data_grid.GetSelectedObject()
+        if user:
+            user_frame = UserFrame(self.data_panel, -1, user=user)
+            user_frame.Bind(EVT_USER_MODIFIED, self._user_modified)
+            user_frame.Show()
+
+    def _user_modified(self, event):
+        self.data_grid.RefreshObject(event.user)
 
     def _interface_refresh(self, event=None):
         current_interface = self.interface_choice.GetStringSelection()
@@ -438,3 +453,147 @@ def locked_getter(user):
         return "unlocked"
     else:
         return "locked"
+
+class UserFrame(wx.Frame):
+
+    MENU_CLOSE = 101
+    PARAM_BORDER = 4
+
+    def __init__(self, parent, ID, user):
+        self.user = user
+
+        # Main window.
+        title = "User %s" % user.mac
+        if user.nickname:
+            title += " (%s)" % user.nickname
+        wx.Frame.__init__(self, parent, -1, title, size=(1000,400))
+
+        # Menu bar.
+        menu_bar = wx.MenuBar()
+        file_menu = wx.Menu()
+        file_menu.Append(self.MENU_CLOSE, "Close\tCtrl+W")
+        self.Bind(wx.EVT_MENU, self._close, id=self.MENU_CLOSE)
+        menu_bar.Append(file_menu, "File")
+        self.SetMenuBar(menu_bar)
+
+        # Basic parameters.
+        panel = wx.Panel(self, -1)
+        self.nickname = wx.TextCtrl(panel, -1)
+        self.anonymous = wx.CheckBox(panel, -1, style=wx.ALIGN_RIGHT)
+        self.sniffable = wx.StaticBitmap(panel, -1)
+        self.mac = wx.StaticText(panel, -1)
+        self.hardware = wx.StaticText(panel, -1)
+        self.ip = wx.StaticText(panel, -1)
+        self.hostname = wx.StaticText(panel, -1)
+        self.current_network = wx.StaticText(panel, -1)
+        self.save = wx.Button(panel, -1, "Save")
+
+        self.nickname.Bind(wx.EVT_TEXT, self._user_modified)
+        self.anonymous.Bind(wx.EVT_CHECKBOX, self._user_modified)
+        self.save.Bind(wx.EVT_BUTTON, self._save)
+
+        params = (('Nickname:', self.nickname),
+                  ('Anonymous:', self.anonymous),
+                  ('Sniffable:', self.sniffable),
+                  ('MAC:', self.mac),
+                  ('Wifi Chipset:', self.hardware),
+                  ('IP Address:', self.ip),
+                  ('Hostname:', self.hostname),
+                  ('Current Network:', self.current_network),
+                  ('', self.save))
+        sizer = wx.FlexGridSizer(len(params), 2,
+                                 self.PARAM_BORDER, self.PARAM_BORDER)
+        for name, value_ui in params:
+            name_label = wx.StaticText(panel, -1, name)
+            sizer.Add(name_label,
+                      flag=(wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_RIGHT),
+                      border=self.PARAM_BORDER)
+            sizer.Add(value_ui,
+                      flag=(wx.ALL | wx.ALIGN_CENTER_VERTICAL |
+                            wx.ALIGN_LEFT | wx.EXPAND),
+                      border=self.PARAM_BORDER)
+        panel.SetSizer(sizer)
+
+        def anon_string(text):
+            if self.user.anonymous:
+                return wlan.obscure_text(text)
+            else:
+                return text
+
+        self.credentials = olv.ObjectListView(self, -1,
+                                              size=(400,-1),
+                                              style=(wx.LC_REPORT |
+                                                     wx.LC_VRULES |
+                                                     wx.SUNKEN_BORDER))
+        username_column = olv.ColumnDefn("Username",
+                                         "left",
+                                         200,
+                                         valueGetter="username",
+                                         stringConverter=anon_string)
+        password_column = olv.ColumnDefn("Password",
+                                         "left",
+                                         200,
+                                         valueGetter="password",
+                                         stringConverter=anon_string)
+        self.credentials.SetColumns([username_column, password_column])
+        self.credentials.SetEmptyListMsg("None.")
+        self.credentials.SetObjects(user.credentials)
+
+        self.networks = olv.ObjectListView(self, -1,
+                                           size=(300,-1),
+                                           style=(wx.LC_REPORT |
+                                                  wx.LC_VRULES |
+                                                  wx.SUNKEN_BORDER))
+        network_column = olv.ColumnDefn("Previous Wifi Networks",
+                                         "left",
+                                         300,
+                                         valueGetter="essid",
+                                         stringConverter=anon_string)
+        self.networks.SetColumns([network_column])
+        self.networks.SetEmptyListMsg("None.")
+        self.networks.SetObjects(user.aps)
+
+        self.update()
+
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        sizer.Add(panel,
+                  flag=(wx.ALL | wx.ALIGN_TOP | wx.EXPAND),
+                  border=self.PARAM_BORDER)
+        sizer.Add(self.credentials,
+                  flag=(wx.ALL | wx.ALIGN_TOP | wx.EXPAND),
+                  border=self.PARAM_BORDER)
+        sizer.Add(self.networks,
+                  flag=(wx.ALL | wx.ALIGN_TOP | wx.EXPAND),
+                  border=self.PARAM_BORDER)
+
+        self.SetSizer(sizer)
+
+    def update(self):
+        self.nickname.SetValue(self.user.nickname or '')
+        self.anonymous.SetValue(self.user.anonymous)
+        if self.user.sniffable:
+            self.sniffable.SetBitmap(wx.Bitmap(IMAGE_UNLOCKED))
+        else:
+            self.sniffable.SetBitmap(wx.Bitmap(IMAGE_LOCKED))
+        self.mac.SetLabel(self.user.mac or '')
+        self.hardware.SetLabel(self.user.hardware or '')
+        self.ip.SetLabel(self.user.ip or '')
+        self.hostname.SetLabel(self.user.hostname or '')
+        self.current_network.SetLabel(self.user.current_network or '')
+        self.credentials.RefreshObjects(self.credentials.GetObjects())
+        self.networks.RefreshObjects(self.networks.GetObjects())
+        self.save.Enable(False)
+
+    def _close(self, event):
+        self.Destroy()
+
+    def _save(self, event):
+        self.user.nickname = self.nickname.GetValue() or None
+        self.user.anonymous = self.anonymous.GetValue()
+        self.save.Enable(False)
+        self.update()
+        event = UserModifiedEvent(user=self.user)
+        wx.PostEvent(self, event)
+
+    def _user_modified(self, event):
+        self.save.Enable(True)

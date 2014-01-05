@@ -12,7 +12,7 @@ class AccessPointDemo():
             out['mac'] = fields[0]
             probe = fields[1]
             if probe:
-                out['aps'] = [probe]
+                out['aps'] = [{'essid' : probe}]
         return out
 
 class HttpBasicAuthSniffDemo():

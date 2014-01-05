@@ -122,6 +122,15 @@ def hardware_from_mac(mac):
     prefix = mac[0:8].upper()
     return MAC_HARDWARE.get(prefix, None)
 
+def obscure_text(text):
+    x = len(text)
+    if x > 7:
+        return text[:3] + "*"*(x-6) + text[-3:]
+    elif x > 2:
+        return text[0] + "*"*(x-2) + text[-1]
+    else:
+        return "*"*x
+
 class Interface():
 
     def __init__(self,
@@ -186,6 +195,15 @@ class Network():
         self.security = security
         self.password = password
 
+    def __le__(self, x):
+        return self.essid.__le__(x.essid)
+
+    def __gt__(self, x):
+        return self.essid.__gt__(x.essid)
+
+    def __eq__(self, x):
+        return self.essid.__eq__(x.essid)
+
     def __str__(self):
         return "%s (%s)" % (self.essid, self.bssid)
 
@@ -195,16 +213,36 @@ class Network():
                 (self.essid, self.bssid, self.channel,
                  self.security, self.password))
 
+    def export(self):
+        return {"essid": self.essid,
+                "bssid": self.bssid,
+                "channel": self.channel,
+                "security": self.security,
+                "password": self.password}
+
 class Credential():
 
     SEPARATOR = ":"
 
-    def __init__(self, username, password):
+    def __init__(self, username=None, password=None):
         self.username = username
         self.password = password
 
+    def __le__(self, x):
+        return self.username.__le__(x.username)
+
+    def __gt__(self, x):
+        return self.username.__gt__(x.username)
+
+    def __eq__(self, x):
+        return self.username.__eq__(x.username)
+
     def __str__(self):
         return "%s%s%s" % (self.username, self.SEPARATOR, self.password)
+
+    def export(self):
+        return {'username': self.username,
+                'password': self.password}
 
     @staticmethod
     def from_string(s):
@@ -232,12 +270,16 @@ class User(object):
         self.ip = ip
         self.hostname = hostname
         self.aps = aps or []
+        if all([type(x) == dict for x in self.aps]):
+            self.aps = [Network(**x) for x in self.aps]
         self.aps.sort()
         self.anonymous = anonymous
         self.credentials = credentials or []
-        self.credentials.sort()
         if all([type(x) in (str, unicode) for x in self.credentials]):
             self.credentials = map(Credential.from_string, self.credentials)
+        elif all([type(x) == dict for x in self.credentials]):
+            self.credentials = [Credential(**x) for x in self.credentials]
+        self.credentials.sort()
         # Unpersisted parameters.
         self.current_network = None
         self.sniffable = False
@@ -262,17 +304,14 @@ class User(object):
 
     def export(self):
         """Returns a dict containing all data that should be persisted."""
-        out = {}
-        for attr in ('mac',
-                     'hardware',
-                     'nickname',
-                     'ip',
-                     'hostname',
-                     'aps',
-                     'anonymous',
-                     'credentials',):
-            out[attr] = self.__getattribute__(attr)
-        return out
+        return {'mac': self.mac,
+                'hardware': self.hardware,
+                'nickname': self.nickname,
+                'ip': self.ip,
+                'hostname': self.hostname,
+                'anonymous': self.anonymous,
+                'aps': [x.export() for x in self.aps],
+                'credentials': [x.export() for x in self.credentials]}
 
     def nickname_to_string(self):
         return self.nickname or ''
@@ -283,25 +322,16 @@ class User(object):
 
     def aps_to_string(self, joiner=', '):
         if self.anonymous:
-            seq = [self._obscure_text(x) for x in self.aps]
+            seq = [obscure_text(x.essid) for x in self.aps]
         else:
-            seq = self.aps
+            seq = [x.essid for x in self.aps]
         return joiner.join(seq)
 
     def credentials_to_string(self, joiner=', '):
         if self.anonymous:
-            seq = [Credential.SEPARATOR.join((self._obscure_text(x.username),
-                                              self._obscure_text(x.password))) \
+            seq = [Credential.SEPARATOR.join((obscure_text(x.username),
+                                              obscure_text(x.password))) \
                    for x in self.credentials]
         else:
             seq = map(str, self.credentials)
         return joiner.join(seq)
-
-    def _obscure_text(self, text):
-        x = len(text)
-        if x > 7:
-            return text[:3] + "*"*(x-6) + text[-3:]
-        elif x > 2:
-            return text[0] + "*"*(x-2) + text[-1]
-        else:
-            return "*"*x
