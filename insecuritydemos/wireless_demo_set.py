@@ -299,8 +299,6 @@ class WirelessDemoSet():
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.data_grid, 1, wx.ALL|wx.EXPAND, self.BORDER)
         self.data_panel.SetSizer(sizer)
-        self.data_grid.Bind(wx.EVT_LIST_ITEM_SELECTED, self._item_selected)
-        self.data_grid.Bind(wx.EVT_LIST_ITEM_DESELECTED, self._item_deselected)
         self.data_grid.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self._item_activated)
         self.data_grid.Bind(olv.EVT_SORT, self._column_sort)
 
@@ -311,19 +309,6 @@ class WirelessDemoSet():
             self.data_grid.SortListItemsBy(length_sorter,
                                            event.sortAscending)
             event.wasHandled = True
-
-    def _item_selected(self, event):
-        user = self.data_grid.GetSelectedObject()
-        ui = event.GetEventObject()
-        if user:
-            ui.SetToolTipString(user.aps_to_string('\n'))
-        else:
-            ui.SetToolTip(None)
-        event.Skip()
-
-    def _item_deselected(self, event):
-        event.GetEventObject().SetToolTip(None)
-        event.Skip()
 
     def _item_activated(self, event):
         user = self.data_grid.GetSelectedObject()
