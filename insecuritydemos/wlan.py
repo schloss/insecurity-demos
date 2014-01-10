@@ -258,8 +258,9 @@ class User(object):
                  ip=None,
                  hostname=None,
                  aps=None,
-                 anonymous=True,
-                 credentials=None):
+                 anonymous_aps=True,
+                 credentials=None,
+                 anonymous_creds=True):
         self.mac = mac
         if self.mac:
             self.mac = self.mac.upper()
@@ -273,13 +274,14 @@ class User(object):
         if all([type(x) == dict for x in self.aps]):
             self.aps = [Network(**x) for x in self.aps]
         self.aps.sort()
-        self.anonymous = anonymous
+        self.anonymous_aps = anonymous_aps
         self.credentials = credentials or []
         if all([type(x) in (str, unicode) for x in self.credentials]):
             self.credentials = map(Credential.from_string, self.credentials)
         elif all([type(x) == dict for x in self.credentials]):
             self.credentials = [Credential(**x) for x in self.credentials]
         self.credentials.sort()
+        self.anonymous_creds = anonymous_creds
         # Unpersisted parameters.
         self.current_network = None
         self.sniffable = False
@@ -309,9 +311,10 @@ class User(object):
                 'nickname': self.nickname,
                 'ip': self.ip,
                 'hostname': self.hostname,
-                'anonymous': self.anonymous,
                 'aps': [x.export() for x in self.aps],
-                'credentials': [x.export() for x in self.credentials]}
+                'anonymous_aps': self.anonymous_aps,
+                'credentials': [x.export() for x in self.credentials],
+                'anonymous_creds': self.anonymous_creds}
 
     def nickname_to_string(self):
         return self.nickname or ''
@@ -321,14 +324,14 @@ class User(object):
         return self.nickname
 
     def aps_to_string(self, joiner=', '):
-        if self.anonymous:
+        if self.anonymous_aps:
             seq = [obscure_text(x.essid) for x in self.aps]
         else:
             seq = [x.essid for x in self.aps]
         return joiner.join(seq)
 
     def credentials_to_string(self, joiner=', '):
-        if self.anonymous:
+        if self.anonymous_creds:
             seq = [Credential.SEPARATOR.join((obscure_text(x.username),
                                               obscure_text(x.password))) \
                    for x in self.credentials]

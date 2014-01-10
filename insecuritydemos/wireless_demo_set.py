@@ -252,7 +252,7 @@ class WirelessDemoSet():
                                       isEditable=False,
                                       minimumWidth=175,
                                       isSpaceFilling=True,
-                                      checkStateGetter="anonymous")
+                                      checkStateGetter="anonymous_creds")
         networks_column = olv.ColumnDefn("Previous Wifi Networks",
                                          "left",
                                          175,
@@ -260,7 +260,7 @@ class WirelessDemoSet():
                                          isEditable=False,
                                          minimumWidth=175,
                                          isSpaceFilling=True,
-                                         checkStateGetter="anonymous")
+                                         checkStateGetter="anonymous_aps")
         cols = [olv.ColumnDefn(title="?",
                                fixedWidth=40,
                                align="left",
@@ -479,7 +479,8 @@ class UserFrame(wx.Frame):
         # Basic parameters.
         panel = wx.Panel(self, -1)
         self.nickname = wx.TextCtrl(panel, -1)
-        self.anonymous = wx.CheckBox(panel, -1, style=wx.ALIGN_RIGHT)
+        self.anonymous_aps = wx.CheckBox(panel, -1, "Previous Networks")
+        self.anonymous_creds = wx.CheckBox(panel, -1, "Credentials")
         self.sniffable = wx.StaticBitmap(panel, -1)
         self.mac = wx.StaticText(panel, -1)
         self.hardware = wx.StaticText(panel, -1)
@@ -489,11 +490,13 @@ class UserFrame(wx.Frame):
         self.save = wx.Button(panel, -1, "Save")
 
         self.nickname.Bind(wx.EVT_TEXT, self._user_modified)
-        self.anonymous.Bind(wx.EVT_CHECKBOX, self._user_modified)
+        self.anonymous_aps.Bind(wx.EVT_CHECKBOX, self._user_modified)
+        self.anonymous_creds.Bind(wx.EVT_CHECKBOX, self._user_modified)
         self.save.Bind(wx.EVT_BUTTON, self._save)
 
         params = (('Nickname:', self.nickname),
-                  ('Anonymous:', self.anonymous),
+                  ('Anonymous:', self.anonymous_creds),
+                  ('', self.anonymous_aps),
                   ('Sniffable:', self.sniffable),
                   ('MAC:', self.mac),
                   ('Wifi Chipset:', self.hardware),
@@ -514,8 +517,14 @@ class UserFrame(wx.Frame):
                       border=self.PARAM_BORDER)
         panel.SetSizer(sizer)
 
-        def anon_string(text):
-            if self.user.anonymous:
+        def anon_ap_string(text):
+            if self.user.anonymous_aps:
+                return wlan.obscure_text(text)
+            else:
+                return text
+
+        def anon_cred_string(text):
+            if self.user.anonymous_creds:
                 return wlan.obscure_text(text)
             else:
                 return text
@@ -529,12 +538,12 @@ class UserFrame(wx.Frame):
                                          "left",
                                          200,
                                          valueGetter="username",
-                                         stringConverter=anon_string)
+                                         stringConverter=anon_cred_string)
         password_column = olv.ColumnDefn("Password",
                                          "left",
                                          200,
                                          valueGetter="password",
-                                         stringConverter=anon_string)
+                                         stringConverter=anon_cred_string)
         self.credentials.SetColumns([username_column, password_column])
         self.credentials.SetEmptyListMsg("None.")
         self.credentials.SetObjects(user.credentials)
@@ -548,7 +557,7 @@ class UserFrame(wx.Frame):
                                          "left",
                                          300,
                                          valueGetter="essid",
-                                         stringConverter=anon_string)
+                                         stringConverter=anon_ap_string)
         self.networks.SetColumns([network_column])
         self.networks.SetEmptyListMsg("None.")
         self.networks.SetObjects(user.aps)
@@ -570,7 +579,8 @@ class UserFrame(wx.Frame):
 
     def update(self):
         self.nickname.SetValue(self.user.nickname or '')
-        self.anonymous.SetValue(self.user.anonymous)
+        self.anonymous_aps.SetValue(self.user.anonymous_aps)
+        self.anonymous_creds.SetValue(self.user.anonymous_creds)
         if self.user.sniffable:
             self.sniffable.SetBitmap(wx.Bitmap(IMAGE_UNLOCKED))
         else:
@@ -589,7 +599,8 @@ class UserFrame(wx.Frame):
 
     def _save(self, event):
         self.user.nickname = self.nickname.GetValue() or None
-        self.user.anonymous = self.anonymous.GetValue()
+        self.user.anonymous_aps = self.anonymous_aps.GetValue()
+        self.user.anonymous_creds = self.anonymous_creds.GetValue()
         self.save.Enable(False)
         self.update()
         event = UserModifiedEvent(user=self.user)
