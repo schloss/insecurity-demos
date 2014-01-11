@@ -5,7 +5,7 @@ import wx
 import wx.lib.newevent
 import ObjectListView as olv
 from demos import wireless_demos
-from tshark import TShark
+from tools import TShark, Airodump
 from Queue import Empty
 
 IMAGE_LOCKED = os.path.join(os.path.dirname(__file__),
@@ -33,7 +33,7 @@ class WirelessDemoSet():
     def __init__(self, parent):
         self._polling_demo = None
         self.timer = wx.Timer()
-        self.timer.Bind(wx.EVT_TIMER, self._poll_tshark)
+        self.timer.Bind(wx.EVT_TIMER, self._poll_tools)
         self.tshark = None
         self.interfaces = []
         self.networks = []
@@ -64,7 +64,7 @@ class WirelessDemoSet():
             if i.monitor_mode:
                 i.disable_monitor_mode()
 
-    def _poll_tshark(self, event):
+    def _poll_tools(self, event):
         while self.tshark:
             try:
                 line = self.tshark.queue.get_nowait()
@@ -87,6 +87,11 @@ class WirelessDemoSet():
                     self.data_grid.RefreshObject(old_user)
                 else:
                     self.data_grid.AddObject(new_user)
+        if self.airodump:
+            aps, users = self.airodump.status()
+            aps = [wlan.Network(**x) for x in aps]
+            users = [wlan.User(**x) for x in users]
+            self.merge_users(users)
 
     def demo_names(self):
         return [demo.TITLE for demo in self.DEMOS]
@@ -114,6 +119,8 @@ class WirelessDemoSet():
             self.timer.Stop()
             self.tshark.stop_capture()
             self.tshark = None
+            self.airodump.stop_capture()
+            self.airodump = None
             self._polling_demo = None
             return
         # Put the interface into the correct mode.
@@ -134,6 +141,11 @@ class WirelessDemoSet():
                              capture_filter=demo.TSHARK_CAPTURE_FILTER,
                              read_filter=demo.TSHARK_READ_FILTER)
         self.tshark.start_capture()
+
+        # XXX : testing
+        self.airodump = Airodump(interface=interface)
+        self.airodump.start_capture()
+
         self.timer.Start(self.TSHARK_POLL_INTERVAL)
 
     def _enable_network_panel(self, is_enabled):

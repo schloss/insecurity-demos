@@ -26,7 +26,7 @@ Files: insecdem /usr/bin
  insecuritydemos/unlocked_small.png /usr/share
  insecuritydemos/insecdem.py /usr/share
  insecuritydemos/wlan.py /usr/share
- insecuritydemos/tshark.py /usr/share
+ insecuritydemos/tools.py /usr/share
  insecuritydemos/wireless_demo_set.py /usr/share
  insecuritydemos/demos/__init__.py /usr/share
  insecuritydemos/demos/wireless_demos.py /usr/share
