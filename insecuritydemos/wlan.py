@@ -87,13 +87,10 @@ def interfaces_from_airmon_ng(blob):
         entry = entry.strip()
         if entry.startswith(MONITOR_MODE_FLAG):
             # This only happens when an interface is put into monitor
-            # mode, in which case the results from airmon-ng might be
-            # for that interface only. The remaining interface lines
-            # list other monitor interfaces.  XXX : check this with
-            # multiple interfaces available.
+            # mode.
             entry = entry.strip("()")
-            assert(len(interfaces) == 1)
-            interfaces[0].monitor_mode = entry.split()[-1]
+            assert(len(interfaces) > 0)
+            interfaces[-1].monitor_mode = entry.split()[-1]
             continue
         args = map(lambda x: x.strip(), entry.strip().split('\t'))
         args = filter(None, args)
@@ -148,10 +145,15 @@ class Interface():
         output = subprocess.check_output(cmd, shell=True)
         results = interfaces_from_airmon_ng(output)
         assert(results)
-        interface = results[0]
-        assert(interface.interface_name == self.interface_name)
-        assert(interface.monitor_mode)
-        self.monitor_mode = interface.monitor_mode
+        for interface in results:
+            if interface.interface_name == self.interface_name:
+                assert(interface.monitor_mode)
+                self.monitor_mode = interface.monitor_mode
+                break
+        else:
+            print "Oops: Something unexpected happened."
+            print ("Could not verify that the %s interface is "
+                   "in monitor mode." % self.interface_name)
 
     def disable_monitor_mode(self):
         if not self.monitor_mode:
@@ -257,6 +259,7 @@ class User(object):
                  nickname=None,
                  ip=None,
                  hostname=None,
+                 current_network=None,
                  aps=None,
                  anonymous_aps=True,
                  credentials=None,
@@ -270,6 +273,9 @@ class User(object):
         self.nickname = nickname
         self.ip = ip
         self.hostname = hostname
+        self.current_network = current_network
+        if type(self.current_network) == dict:
+            self.current_network = Network(**self.current_network)
         self.aps = aps or []
         if all([type(x) == dict for x in self.aps]):
             self.aps = [Network(**x) for x in self.aps]
@@ -282,8 +288,6 @@ class User(object):
             self.credentials = [Credential(**x) for x in self.credentials]
         self.credentials.sort()
         self.anonymous_creds = anonymous_creds
-        # Unpersisted parameters.
-        self.current_network = None
         self.sniffable = False
 
     def merge(self, user):
@@ -338,3 +342,10 @@ class User(object):
         else:
             seq = map(str, self.credentials)
         return joiner.join(seq)
+
+    def current_network_to_string(self):
+        if self.current_network:
+            return (self.current_network.essid or
+                    "[%s]" % self.current_network.bssid)
+        else:
+            return ''

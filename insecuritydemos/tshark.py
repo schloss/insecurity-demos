@@ -14,10 +14,12 @@ class TShark(subprocess.Popen):
                  interface=None,
                  fields=None,
                  separator=None,
+                 capture_filter=None,
                  read_filter=None):
         self.interface = interface
         self.fields = fields
         self.separator = separator
+        self.capture_filter = capture_filter
         self.read_filter = read_filter
         self.queue = None
         self.queue_thread = None
@@ -33,6 +35,8 @@ class TShark(subprocess.Popen):
                 cmd.append("-E separator=%s" % self.separator)
         if self.read_filter:
             cmd.append("-R \"%s\"" % self.read_filter)
+        if self.capture_filter:
+            cmd.append("-f \"%s\"" % self.capture_filter)
         return " ".join(cmd)
 
     def start_capture(self):

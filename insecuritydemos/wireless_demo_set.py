@@ -131,6 +131,7 @@ class WirelessDemoSet():
         self.tshark = TShark(interface=interface,
                              fields=demo.TSHARK_FIELDS,
                              separator=self.TSHARK_SEPARATOR,
+                             capture_filter=demo.TSHARK_CAPTURE_FILTER,
                              read_filter=demo.TSHARK_READ_FILTER)
         self.tshark.start_capture()
         self.timer.Start(self.TSHARK_POLL_INTERVAL)
@@ -278,7 +279,7 @@ class WirelessDemoSet():
                 olv.ColumnDefn("Hostname", "left", 175, "hostname",
                                isEditable=False),
                 olv.ColumnDefn("Current Network", "left", 175,
-                               "current_network",
+                               "current_network_to_string",
                                isEditable=False),
                 creds_column,
                 networks_column]
@@ -574,7 +575,7 @@ class UserFrame(wx.Frame):
         self.hardware.SetLabel(self.user.hardware or '')
         self.ip.SetLabel(self.user.ip or '')
         self.hostname.SetLabel(self.user.hostname or '')
-        self.current_network.SetLabel(self.user.current_network or '')
+        self.current_network.SetLabel(self.user.current_network_to_string())
         self.credentials.RefreshObjects(self.credentials.GetObjects())
         self.networks.RefreshObjects(self.networks.GetObjects())
         self.save.Enable(False)
