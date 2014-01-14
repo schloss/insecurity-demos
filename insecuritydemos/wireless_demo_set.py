@@ -76,6 +76,15 @@ class WirelessDemoSet():
             if fields:
                 print fields
                 new_user = wlan.User(**fields)
+                # Match the user's network's BSSID to a known ESSID.
+                if (new_user.current_network and
+                    new_user.current_network.bssid and
+                    not new_user.current_network.essid):
+                    bssid = new_user.current_network.bssid
+                    for network in self.networks:
+                        if network.bssid == bssid:
+                            new_user.current_network.essid = network.essid
+                            break
                 for user in self.get_users():
                     if user.mac == new_user.mac:
                         old_user = user
@@ -116,6 +125,8 @@ class WirelessDemoSet():
             self.tshark = None
             self._polling_demo = None
             return
+        # Update the list of available networks before every demo.
+        self._network_refresh()
         # Put the interface into the correct mode.
         interface = self._get_interface()
         if demo.MONITOR_MODE and not interface.monitor_mode:

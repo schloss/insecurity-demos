@@ -196,6 +196,10 @@ class Network():
         self.channel = channel
         self.security = security
         self.password = password
+        if self.essid:
+            self.essid = self.essid.upper()
+        if self.bssid:
+            self.bssid = self.bssid.upper()
 
     def __le__(self, x):
         return self.essid.__le__(x.essid)
