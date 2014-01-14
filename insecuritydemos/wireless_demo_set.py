@@ -388,7 +388,8 @@ class WirelessDemoSet():
 
     def _network_selected(self, event=None):
         network = self._get_network()
-        self.network_password_button.Enable(network != None)
+        self.network_password_button.Enable((network != None) and
+                                            (self.network_choice.Enabled))
 
     def _network_refresh(self, event=None):
         interface = self.interface_choice.GetStringSelection()
