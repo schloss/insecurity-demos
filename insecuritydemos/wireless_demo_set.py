@@ -5,7 +5,7 @@ import wx
 import wx.lib.newevent
 import ObjectListView as olv
 from demos import wireless_demos
-from tools import TShark, Airodump
+from tools import TShark
 from Queue import Empty
 
 IMAGE_LOCKED = os.path.join(os.path.dirname(__file__),
@@ -87,11 +87,6 @@ class WirelessDemoSet():
                     self.data_grid.RefreshObject(old_user)
                 else:
                     self.data_grid.AddObject(new_user)
-        if self.airodump:
-            aps, users = self.airodump.status()
-            aps = [wlan.Network(**x) for x in aps]
-            users = [wlan.User(**x) for x in users]
-            self.merge_users(users)
 
     def demo_names(self):
         return [demo.TITLE for demo in self.DEMOS]
@@ -119,8 +114,6 @@ class WirelessDemoSet():
             self.timer.Stop()
             self.tshark.stop_capture()
             self.tshark = None
-            self.airodump.stop_capture()
-            self.airodump = None
             self._polling_demo = None
             return
         # Put the interface into the correct mode.
@@ -141,11 +134,6 @@ class WirelessDemoSet():
                              capture_filter=demo.TSHARK_CAPTURE_FILTER,
                              read_filter=demo.TSHARK_READ_FILTER)
         self.tshark.start_capture()
-
-        # XXX : testing
-        self.airodump = Airodump(interface=interface)
-        self.airodump.start_capture()
-
         self.timer.Start(self.TSHARK_POLL_INTERVAL)
 
     def _enable_network_panel(self, is_enabled):
