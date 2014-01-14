@@ -275,6 +275,12 @@ class WirelessDemoSet():
                                          minimumWidth=175,
                                          isSpaceFilling=True,
                                          checkStateGetter="anonymous_aps")
+        value_getter = "current_network_to_string"
+        self.current_network_column = olv.ColumnDefn(title="Current Network",
+                                                     align="left",
+                                                     width=175,
+                                                     valueGetter=value_getter,
+                                                     isEditable=False)
         cols = [olv.ColumnDefn(title="?",
                                fixedWidth=40,
                                align="left",
@@ -289,9 +295,7 @@ class WirelessDemoSet():
                                isEditable=False),
                 #olv.ColumnDefn("IP Address", "left", 175, "ip", isEditable=False),
                 #olv.ColumnDefn("Hostname", "left", 175, "hostname", isEditable=False),
-                olv.ColumnDefn("Current Network", "left", 175,
-                               "current_network_to_string",
-                               isEditable=False),
+                self.current_network_column,
                 #creds_column,
                 networks_column]
         #self.credentials_column_index = cols.index(creds_column)
@@ -392,6 +396,14 @@ class WirelessDemoSet():
         network = self._get_network()
         self.network_password_button.Enable((network != None) and
                                             (self.network_choice.Enabled))
+        if network == None:
+            f = None
+        else:
+            f = olv.Filter.TextSearch(self.data_grid,
+                                      columns=(self.current_network_column,),
+                                      text=network.essid)
+        self.data_grid.SetFilter(f)
+        self.data_grid.RepopulateList()
 
     def _network_refresh(self, event=None):
         interface = self.interface_choice.GetStringSelection()

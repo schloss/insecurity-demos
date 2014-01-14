@@ -208,6 +208,8 @@ class Network():
         return self.essid.__gt__(x.essid)
 
     def __eq__(self, x):
+        if type(x) != Network:
+            return False
         return self.essid.__eq__(x.essid)
 
     def __str__(self):
