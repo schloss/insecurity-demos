@@ -274,16 +274,14 @@ class WirelessDemoSet():
                                valueSetter="nickname_from_string"),
                 olv.ColumnDefn("Wifi Chipset", "left", 175, "hardware",
                                isEditable=False),
-                olv.ColumnDefn("IP Address", "left", 175, "ip",
-                               isEditable=False),
-                olv.ColumnDefn("Hostname", "left", 175, "hostname",
-                               isEditable=False),
+                #olv.ColumnDefn("IP Address", "left", 175, "ip", isEditable=False),
+                #olv.ColumnDefn("Hostname", "left", 175, "hostname", isEditable=False),
                 olv.ColumnDefn("Current Network", "left", 175,
                                "current_network_to_string",
                                isEditable=False),
-                creds_column,
+                #creds_column,
                 networks_column]
-        self.credentials_column_index = cols.index(creds_column)
+        #self.credentials_column_index = cols.index(creds_column)
         self.networks_column_index = cols.index(networks_column)
         self.data_grid.SetColumns(cols)
         self.data_grid.SetEmptyListMsg("Start a demo or use \"File > Import\""
@@ -305,8 +303,8 @@ class WirelessDemoSet():
 
     # Sort by number of elements, not string representation of list.
     def _column_sort(self, event):
-        if event.sortColumnIndex in (self.credentials_column_index,
-                                     self.networks_column_index):
+        if event.sortColumnIndex in (#self.credentials_column_index,
+                                     self.networks_column_index,):
             self.data_grid.SortListItemsBy(length_sorter,
                                            event.sortAscending)
             event.wasHandled = True
