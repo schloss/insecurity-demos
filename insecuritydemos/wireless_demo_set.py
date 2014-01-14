@@ -27,6 +27,7 @@ class WirelessDemoSet():
     NETWORK_INTERFACE_LABEL = "Network Interface"
     WIRELESS_NETWORK_LABEL = "Wireless Network"
     MONITOR_MODE_LABEL_OFF = "Monitor mode is OFF."
+    SELECT_NETWORK_LABEL = "Select a network..."
     TSHARK_SEPARATOR = ','
     TSHARK_POLL_INTERVAL = 500
 
@@ -176,10 +177,11 @@ class WirelessDemoSet():
         return None
 
     def _get_network(self):
-        name = self.network_choice.GetStringSelection()
-        for n in self.networks:
-            if str(n) == name:
-                return n
+        if self.network_choice.GetSelection() > 0:
+            name = self.network_choice.GetStringSelection()
+            for n in self.networks:
+                if str(n) == name:
+                    return n
         return None
 
     def _init_control_panel(self, parent):
@@ -403,6 +405,8 @@ class WirelessDemoSet():
                 if not all(['WPA' in s for s in n.security]):
                     self.networks.remove(n)
             network_names = map(str, self.networks)
+            if network_names:
+                network_names.insert(0, self.SELECT_NETWORK_LABEL)
             self.network_choice.SetItems(network_names)
             if network_names:
                 if current_network in network_names:
