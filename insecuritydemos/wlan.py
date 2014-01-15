@@ -196,8 +196,6 @@ class Network():
         self.channel = channel
         self.security = security
         self.password = password
-        if self.essid:
-            self.essid = self.essid.upper()
         if self.bssid:
             self.bssid = self.bssid.upper()
 
@@ -208,7 +206,7 @@ class Network():
         return self.essid.__gt__(x.essid)
 
     def __eq__(self, x):
-        if type(x) != Network:
+        if not isinstance(x, Network):
             return False
         return self.essid.__eq__(x.essid)
 
