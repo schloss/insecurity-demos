@@ -77,6 +77,12 @@ class WirelessDemoSet():
             if fields:
                 print fields
                 new_user = wlan.User(**fields)
+                # Access points aren't users.
+                for network in self.networks:
+                    if new_user.mac == network.bssid:
+                        new_user = None
+                if not new_user:
+                    continue
                 # Match the user's network's BSSID to a known ESSID.
                 if (new_user.current_network and
                     new_user.current_network.bssid and
