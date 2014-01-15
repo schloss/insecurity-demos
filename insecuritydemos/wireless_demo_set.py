@@ -500,11 +500,13 @@ class UserFrame(wx.Frame):
         self.hostname = wx.StaticText(panel, -1)
         self.current_network = wx.StaticText(panel, -1)
         self.save = wx.Button(panel, -1, "Save")
+        self.clear = wx.Button(panel, -1, "Clear Sensitive Data")
 
         self.nickname.Bind(wx.EVT_TEXT, self._user_modified)
         self.anonymous_aps.Bind(wx.EVT_CHECKBOX, self._user_modified)
         self.anonymous_creds.Bind(wx.EVT_CHECKBOX, self._user_modified)
         self.save.Bind(wx.EVT_BUTTON, self._save)
+        self.clear.Bind(wx.EVT_BUTTON, self._clear)
 
         params = (('Nickname:', self.nickname),
                   ('Anonymous:', self.anonymous_creds),
@@ -515,7 +517,8 @@ class UserFrame(wx.Frame):
                   ('IP Address:', self.ip),
                   ('Hostname:', self.hostname),
                   ('Last Wifi Network:', self.current_network),
-                  ('', self.save))
+                  ('', self.save),
+                  ('', self.clear))
         sizer = wx.FlexGridSizer(len(params), 2,
                                  self.PARAM_BORDER, self.PARAM_BORDER)
         for name, value_ui in params:
@@ -602,8 +605,8 @@ class UserFrame(wx.Frame):
         self.ip.SetLabel(self.user.ip or '')
         self.hostname.SetLabel(self.user.hostname or '')
         self.current_network.SetLabel(self.user.current_network_to_string())
-        self.credentials.RefreshObjects(self.credentials.GetObjects())
-        self.networks.RefreshObjects(self.networks.GetObjects())
+        self.credentials.SetObjects(self.user.credentials)
+        self.networks.SetObjects(self.user.aps)
         self.save.Enable(False)
 
     def _close(self, event):
@@ -614,6 +617,15 @@ class UserFrame(wx.Frame):
         self.user.anonymous_aps = self.anonymous_aps.GetValue()
         self.user.anonymous_creds = self.anonymous_creds.GetValue()
         self.save.Enable(False)
+        self.update()
+        event = UserModifiedEvent(user=self.user)
+        wx.PostEvent(self, event)
+
+    def _clear(self, event):
+        self.user.aps = []
+        self.user.credentials = []
+        self.user.hostname = None
+        self.user.ip = None
         self.update()
         event = UserModifiedEvent(user=self.user)
         wx.PostEvent(self, event)
