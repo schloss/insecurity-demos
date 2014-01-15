@@ -2,6 +2,8 @@ class AccessPointDemo():
     TITLE = "Wifi History"
     MONITOR_MODE = True
     WIRELESS_NETWORKS_CONTROL = False
+    REQUIRES_NETWORK = False
+    REQUIRES_NETWORK_PASSWORD = False
     TSHARK_FIELDS = ('wlan.sa',
                      'wlan_mgt.ssid',
                      'wlan.bssid')
@@ -24,3 +26,5 @@ class HttpBasicAuthSniffDemo():
     TITLE = "Basic Auth Sniffer"
     MONITOR_MODE = True
     WIRELESS_NETWORKS_CONTROL = True
+    REQUIRES_NETWORK = True
+    REQUIRES_NETWORK_PASSWORD = True

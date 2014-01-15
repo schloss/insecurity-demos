@@ -130,15 +130,15 @@ class InsecurityDemosFrame(wx.Frame):
 
     def _status_toggled(self, event):
         label = self.status_button.GetLabel()
-        if label == self.START_LABEL:
+        enabled = label == self.START_LABEL
+        demo_name = self.demo_choice.GetStringSelection()
+        enabled = self.current_demo_set.enable_demo(demo_name, enabled)
+        if enabled:
             label = self.STOP_LABEL
         else:
             label = self.START_LABEL
         self.status_button.SetLabel(label)
-        is_enabled = label == self.STOP_LABEL
-        self.demo_choice.Enable(not is_enabled)
-        demo_name = self.demo_choice.GetStringSelection()
-        self.current_demo_set.enable_demo(demo_name, is_enabled)
+        self.demo_choice.Enable(not enabled)
 
     def _demo_selected(self, event=None):
         self.status_button.Enable(self.demo_choice.GetSelection() != 0)

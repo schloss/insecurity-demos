@@ -119,11 +119,39 @@ class WirelessDemoSet():
     def enable_demo(self, demo_title, is_enabled):
         demo = self._get_demo(demo_title)
         if not demo:
-            return
+            return False
+
+        # Check that the demo has everything it needs to start.
+        network = self._get_network()
+        if (is_enabled and
+            demo.REQUIRES_NETWORK and
+            not network):
+            dialog = wx.MessageDialog(self.control_panel,
+                                      "Please select a wireless network "
+                                      "and try again.",
+                                      "Network Required",
+                                      wx.OK | wx.ICON_INFORMATION)
+            dialog.ShowModal()
+            dialog.Destroy()
+            return False
+        if (is_enabled and
+            demo.REQUIRES_NETWORK_PASSWORD and
+            not network.password):
+            dialog = wx.MessageDialog(self.control_panel,
+                                      "Please enter a password for the "
+                                      "wireless network and try again.",
+                                      "Password Required",
+                                      wx.OK | wx.ICON_INFORMATION)
+            dialog.ShowModal()
+            dialog.Destroy()
+            return False
+
+        # Enable UI elements as appropriate.
         self._enable_network_panel(not is_enabled and
                                    demo.WIRELESS_NETWORKS_CONTROL)
         self._enable_interface_panel(not is_enabled)
         wx.CallAfter(self._enable_demo, demo, is_enabled)
+        return is_enabled
 
     def _enable_demo(self, demo, is_enabled):
         if not is_enabled:
