@@ -276,7 +276,7 @@ class WirelessDemoSet():
                                          isSpaceFilling=True,
                                          checkStateGetter="anonymous_aps")
         value_getter = "current_network_to_string"
-        self.current_network_column = olv.ColumnDefn(title="Current Network",
+        self.current_network_column = olv.ColumnDefn(title="Last Wifi Network",
                                                      align="left",
                                                      width=175,
                                                      valueGetter=value_getter,
@@ -514,7 +514,7 @@ class UserFrame(wx.Frame):
                   ('Wifi Chipset:', self.hardware),
                   ('IP Address:', self.ip),
                   ('Hostname:', self.hostname),
-                  ('Current Network:', self.current_network),
+                  ('Last Wifi Network:', self.current_network),
                   ('', self.save))
         sizer = wx.FlexGridSizer(len(params), 2,
                                  self.PARAM_BORDER, self.PARAM_BORDER)
