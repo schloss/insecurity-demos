@@ -134,14 +134,17 @@ class Interface():
                  interface_name,
                  chipset=None,
                  driver=None,
-                 monitor_mode=None):
+                 monitor_mode=None,
+                 monitor_mode_channel=None):
         self.interface_name = interface_name
         self.chipset = chipset
         self.driver = driver
         self.monitor_mode = monitor_mode
+        self.monitor_mode_channel = monitor_mode_channel
 
-    def enable_monitor_mode(self):
-        cmd = "airmon-ng start %s" % self.interface_name
+    def enable_monitor_mode(self, channel=None):
+        cmd = "airmon-ng start %s %s" % (self.interface_name, channel or '')
+        print "Entering monitor mode: %s" % cmd
         output = subprocess.check_output(cmd, shell=True)
         results = interfaces_from_airmon_ng(output)
         assert(results)
@@ -149,6 +152,7 @@ class Interface():
             if interface.interface_name == self.interface_name:
                 assert(interface.monitor_mode)
                 self.monitor_mode = interface.monitor_mode
+                self.monitor_mode_channel = channel
                 break
         else:
             print "Oops: Something unexpected happened."
@@ -159,6 +163,7 @@ class Interface():
         if not self.monitor_mode:
             return
         cmd = "airmon-ng stop %s" % self.monitor_mode
+        print "Leaving monitor mode: %s" % cmd
         lines = subprocess.check_output(cmd, shell=True).splitlines()
         # Verify that the interface was indeed taken out of monitor mode.
         for x in lines:

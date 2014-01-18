@@ -81,6 +81,7 @@ class WirelessDemoSet():
                 for network in self.networks:
                     if new_user.mac == network.bssid:
                         new_user = None
+                        break
                 if not new_user:
                     continue
                 # Match the user's network's BSSID to a known ESSID.
@@ -162,10 +163,21 @@ class WirelessDemoSet():
             return
         # Update the list of available networks before every demo.
         self._network_refresh()
+        # Determine the channel of the network to monitor, if any.
+        network = self._get_network()
+        if network:
+            channel = network.channel
+        else:
+            channel = None
         # Put the interface into the correct mode.
         interface = self._get_interface()
+        if (interface.monitor_mode and
+            interface.monitor_mode_channel != channel):
+            interface.disable_monitor_mode()
+            self._interface_refresh()
+            interface = self._get_interface()
         if demo.MONITOR_MODE and not interface.monitor_mode:
-            interface.enable_monitor_mode()
+            interface.enable_monitor_mode(channel)
             self._interface_refresh()
         elif not demo.MONITOR_MODE and interface.monitor_mode:
             interface.disable_monitor_mode()

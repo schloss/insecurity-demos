@@ -28,3 +28,10 @@ class HttpBasicAuthSniffDemo():
     WIRELESS_NETWORKS_CONTROL = True
     REQUIRES_NETWORK = True
     REQUIRES_NETWORK_PASSWORD = True
+    TSHARK_FIELDS = []
+    TSHARK_READ_FILTER = 'eapol'
+    TSHARK_CAPTURE_FILTER = None
+
+    def interpret_tshark_output(self, fields):
+        print "FIELDS:", fields
+        return None
