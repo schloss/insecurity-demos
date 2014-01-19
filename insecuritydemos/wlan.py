@@ -272,7 +272,8 @@ class User(object):
                  aps=None,
                  anonymous_aps=True,
                  credentials=None,
-                 anonymous_creds=True):
+                 anonymous_creds=True,
+                 eapol_flags=0):
         self.mac = mac
         if self.mac:
             self.mac = self.mac.upper()
@@ -297,6 +298,7 @@ class User(object):
             self.credentials = [Credential(**x) for x in self.credentials]
         self.credentials.sort()
         self.anonymous_creds = anonymous_creds
+        self.eapol_flags = eapol_flags
         self.sniffable = False
 
     def merge(self, user):
@@ -314,7 +316,8 @@ class User(object):
                 self.credentials.append(credential)
         self.credentials.sort()
         self.current_network = user.current_network or self.current_network
-        self.sniffable = user.sniffable or self.sniffable
+        self.eapol_flags |= user.eapol_flags
+        self.sniffable = (self.eapol_flags == 0b1111)
         # Don't change the anonymity of this user.
 
     def export(self):

@@ -305,6 +305,11 @@ class WirelessDemoSet():
                                       wx.Bitmap(IMAGE_LOCKED))
         self.data_grid.AddNamedImages("unlocked",
                                       wx.Bitmap(IMAGE_UNLOCKED))
+        sniffable_column = olv.ColumnDefn(title="?",
+                                          fixedWidth=40,
+                                          align="left",
+                                          isEditable=False,
+                                          imageGetter=locked_getter)
         creds_column = olv.ColumnDefn("Credentials",
                                       "left",
                                       175,
@@ -327,11 +332,7 @@ class WirelessDemoSet():
                                                      width=175,
                                                      valueGetter=value_getter,
                                                      isEditable=False)
-        cols = [olv.ColumnDefn(title="?",
-                               fixedWidth=40,
-                               align="left",
-                               isEditable=False,
-                               imageGetter=locked_getter),
+        cols = [sniffable_column,
                 olv.ColumnDefn("MAC Address", "left", 175, "mac",
                                isEditable=False),
                 olv.ColumnDefn("Nickname", "left", 175,
@@ -344,6 +345,7 @@ class WirelessDemoSet():
                 self.current_network_column,
                 #creds_column,
                 networks_column]
+        self.sniffable_column_index = cols.index(sniffable_column)
         #self.credentials_column_index = cols.index(creds_column)
         self.networks_column_index = cols.index(networks_column)
         self.data_grid.SetColumns(cols)
@@ -371,6 +373,9 @@ class WirelessDemoSet():
             self.data_grid.SortListItemsBy(length_sorter,
                                            event.sortAscending)
             event.wasHandled = True
+        elif event.sortColumnIndex == self.sniffable_column_index:
+            self.data_grid.SortListItemsBy(sniffable_sorter,
+                                           event.sortAscending)
 
     def _item_activated(self, event):
         user = self.data_grid.GetSelectedObject()
@@ -505,6 +510,14 @@ def length_sorter(x, y):
             return 1
         else:
             return 0
+
+def sniffable_sorter(x, y):
+    if x.sniffable and not y.sniffable:
+        return 1
+    elif not x.sniffable and y.sniffable:
+        return -1
+    else:
+        return 0
 
 def locked_getter(user):
     if user.sniffable:
