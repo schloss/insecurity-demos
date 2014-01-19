@@ -185,12 +185,20 @@ class WirelessDemoSet():
         # Start TShark with the demo parameters.
         self._polling_demo = demo
         interface = self._get_interface()
-        interface = interface.monitor_mode or interface.interface_name
-        self.tshark = TShark(interface=interface,
+        interface_name = interface.monitor_mode or interface.interface_name
+        if demo.TSHARK_SUPPLY_PASSWORD:
+            prefs = (demo.TSHARK_PREFERENCES +
+                     ['uat:80211_keys:\\"wpa-pwd\\",\\"%s:%s\\"' %
+                      (network.password, network.essid)])
+        else:
+            prefs = demo.TSHARK_PREFERENCES
+        self.tshark = TShark(interface=interface_name,
                              fields=demo.TSHARK_FIELDS,
                              separator=self.TSHARK_SEPARATOR,
                              capture_filter=demo.TSHARK_CAPTURE_FILTER,
-                             read_filter=demo.TSHARK_READ_FILTER)
+                             read_filter=demo.TSHARK_READ_FILTER,
+                             preferences=prefs)
+
         self.tshark.start_capture()
         self.timer.Start(self.TSHARK_POLL_INTERVAL)
 
@@ -462,11 +470,17 @@ class WirelessDemoSet():
             self.network_choice.SetItems([])
         else:
             current_network = self.network_choice.GetStringSelection()
+            old_networks = self.networks
             self.networks = wlan.enumerate_networks(interface)
-            # Show only WPA and open networks.
             for n in self.networks:
+                # Show only WPA and open networks.
                 if not all(['WPA' in s for s in n.security]):
                     self.networks.remove(n)
+                    continue
+                # Retain previous information, like password.
+                for old in old_networks:
+                    if old == n:
+                        n.merge(old)
             network_names = map(str, self.networks)
             if network_names:
                 network_names.insert(0, self.SELECT_NETWORK_LABEL)

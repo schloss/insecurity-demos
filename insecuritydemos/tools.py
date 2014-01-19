@@ -18,12 +18,14 @@ class TShark(subprocess.Popen):
                  fields=None,
                  separator=None,
                  capture_filter=None,
-                 read_filter=None):
+                 read_filter=None,
+                 preferences=None):
         self.interface = interface
         self.fields = fields
         self.separator = separator
         self.capture_filter = capture_filter
         self.read_filter = read_filter
+        self.preferences = preferences
         self.queue = None
         self.queue_thread = None
 
@@ -31,6 +33,8 @@ class TShark(subprocess.Popen):
         cmd = ["tshark -2 -n -l"]
         if self.interface:
             cmd.append("-i %s" % self.interface)
+        if self.preferences:
+            cmd += map(lambda x: "-o \"%s\"" % x, self.preferences)
         if self.fields:
             cmd.append("-T fields")
             cmd += map(lambda x: "-e %s" % x, self.fields)

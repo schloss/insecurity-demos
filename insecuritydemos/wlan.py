@@ -231,6 +231,13 @@ class Network():
                 "security": self.security,
                 "password": self.password}
 
+    def merge(self, network):
+        self.essid = self.essid or network.essid
+        self.bssid = self.bssid or network.bssid
+        self.channel = self.channel or network.channel
+        self.security = self.security or network.security
+        self.password = self.password or network.password
+
 class Credential():
 
     SEPARATOR = ":"
