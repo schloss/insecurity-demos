@@ -2,6 +2,7 @@ import json
 import os
 import wlan
 import wx
+import wx.combo
 import wx.lib.newevent
 import ObjectListView as olv
 from demos import wireless_demos
@@ -232,11 +233,9 @@ class WirelessDemoSet():
         return None
 
     def _get_network(self):
-        if self.network_choice.GetSelection() > 0:
-            name = self.network_choice.GetStringSelection()
-            for n in self.networks:
-                if str(n) == name:
-                    return n
+        if self.network_choice.GetSelection() >= 0:
+            i = self.network_choice.GetSelection()
+            return self.network_choice.GetClientData(i)
         return None
 
     def _init_control_panel(self, parent):
@@ -256,10 +255,12 @@ class WirelessDemoSet():
                                                 self.MONITOR_MODE_LABEL_OFF)
 
         # Wireless network selection.
-        self.network_choice = wx.Choice(self.control_panel, -1,
-                                        size=wx.Size(300, -1),
-                                        choices=[])
-        self.network_choice.Bind(wx.EVT_CHOICE,
+        self.network_choice = wx.combo.BitmapComboBox(self.control_panel,
+                                                      -1,
+                                                      size=(300,-1),
+                                                      style=wx.CB_READONLY,
+                                                      choices=[])
+        self.network_choice.Bind(wx.EVT_COMBOBOX,
                                  self._network_selected)
         self.network_refresh_button = wx.Button(self.control_panel,
                                                 label=self.REFRESH_LABEL)
@@ -453,8 +454,11 @@ class WirelessDemoSet():
             f = olv.Filter.TextSearch(self.data_grid,
                                       columns=(self.current_network_column,),
                                       text=network.essid)
-            while not network.password:
-                self._network_password_input()
+            if not network.password:
+                while not network.password:
+                    self._network_password_input()
+                i = self.network_choice.GetSelection()
+                self.network_choice.SetItemBitmap(i, wx.Bitmap(IMAGE_UNLOCKED))
         self.data_grid.SetFilter(f)
         self.data_grid.RepopulateList()
 
@@ -463,7 +467,8 @@ class WirelessDemoSet():
         if not interface:
             self.network_choice.SetItems([])
         else:
-            current_network = self.network_choice.GetStringSelection()
+            current_index = self.network_choice.GetSelection()
+            current_network = self.network_choice.GetClientData(current_index)
             old_networks = self.networks
             self.networks = wlan.enumerate_networks(interface)
             for n in self.networks:
@@ -475,13 +480,18 @@ class WirelessDemoSet():
                 for old in old_networks:
                     if old == n:
                         n.merge(old)
-            network_names = map(str, self.networks)
-            if network_names:
-                network_names.insert(0, self.SELECT_NETWORK_LABEL)
-            self.network_choice.SetItems(network_names)
-            if network_names:
-                if current_network in network_names:
-                    self.network_choice.SetStringSelection(current_network)
+            self.network_choice.SetItems([])
+            if self.networks:
+                self.network_choice.Append(self.SELECT_NETWORK_LABEL,
+                                           clientData=None)
+                for n in self.networks:
+                    if n.password:
+                        icon = wx.Bitmap(IMAGE_UNLOCKED)
+                    else:
+                        icon = wx.Bitmap(IMAGE_LOCKED)
+                    self.network_choice.Append(str(n), icon, n)
+                if current_network in self.networks:
+                    self.network_choice.SetStringSelection(str(current_network))
                 else:
                     self.network_choice.SetSelection(0)
         self._network_selected()
