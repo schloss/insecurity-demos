@@ -23,7 +23,6 @@ class WirelessDemoSet():
              wireless_demos.HttpBasicAuthSniffDemo(),)
     BORDER = 5
     REFRESH_LABEL = "Refresh"
-    PASSWORD_LABEL = "Password"
     NETWORK_INTERFACE_LABEL = "Network Interface"
     WIRELESS_NETWORK_LABEL = "Wireless Network"
     MONITOR_MODE_LABEL_OFF = "Monitor mode is OFF."
@@ -207,8 +206,7 @@ class WirelessDemoSet():
 
     def _enable_network_panel(self, is_enabled):
         for control in (self.network_choice,
-                        self.network_refresh_button,
-                        self.network_password_button):
+                        self.network_refresh_button):
             control.Enable(is_enabled)
         if is_enabled:
             self._network_selected()
@@ -266,10 +264,6 @@ class WirelessDemoSet():
         self.network_refresh_button = wx.Button(self.control_panel,
                                                 label=self.REFRESH_LABEL)
         self.network_refresh_button.Bind(wx.EVT_BUTTON, self._network_refresh)
-        self.network_password_button = wx.Button(self.control_panel,
-                                                 label=self.PASSWORD_LABEL)
-        self.network_password_button.Bind(wx.EVT_BUTTON,
-                                          self._network_password_input)
 
         # Layout.
         sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -296,9 +290,6 @@ class WirelessDemoSet():
                           flag=flags,
                           border=self.BORDER)
         network_sizer.Add(self.network_refresh_button,
-                          flag=flags,
-                          border=self.BORDER)
-        network_sizer.Add(self.network_password_button,
                           flag=flags,
                           border=self.BORDER)
         sizer.Add(network_sizer, flag=flags, border=self.BORDER)
@@ -456,14 +447,14 @@ class WirelessDemoSet():
 
     def _network_selected(self, event=None):
         network = self._get_network()
-        self.network_password_button.Enable((network != None) and
-                                            (self.network_choice.Enabled))
         if network == None:
             f = None
         else:
             f = olv.Filter.TextSearch(self.data_grid,
                                       columns=(self.current_network_column,),
                                       text=network.essid)
+            while not network.password:
+                self._network_password_input()
         self.data_grid.SetFilter(f)
         self.data_grid.RepopulateList()
 
@@ -495,7 +486,7 @@ class WirelessDemoSet():
                     self.network_choice.SetSelection(0)
         self._network_selected()
 
-    def _network_password_input(self, event=None):
+    def _network_password_input(self):
         network = self._get_network()
         if not network:
             return
