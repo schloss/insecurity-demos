@@ -10,6 +10,7 @@ import wx.html
 from wx.lib.utils import AdjustRectToScreen
 import wlan
 from wireless_demo_set import WirelessDemoSet
+from wireless_demo_set import EVT_DEMO_SELECTED
 
 class InsecurityDemosFrame(wx.Frame):
     """The top-level GUI element of the Plover application."""
@@ -21,16 +22,15 @@ class InsecurityDemosFrame(wx.Frame):
     STOP_LABEL = "Stop"
     DEMO_LABEL = "Demo"
     NOTES_LABEL = "Notes"
-    CHOOSE_DEMO_LABEL = "Select a demo..."
     FILE_FILTER = "JSON files (*.json)|*.json|" \
                   "Text files (*.txt)|*.txt|"   \
                   "All files (*.*)|*.*"
 
-    def __init__(self, parent, log):
-        self.log = log # XXX : This should be used throughout
+    def __init__(self, parent):
         wx.Frame.__init__(self, parent, title=self.TITLE)
         self.Bind(wx.EVT_CLOSE, self._quit)
         self.wireless_demo_set = WirelessDemoSet(self)
+        self.Bind(EVT_DEMO_SELECTED, self._demo_selected)
         self.current_demo_set = self.wireless_demo_set
 
         # Menu bar.
@@ -68,10 +68,6 @@ class InsecurityDemosFrame(wx.Frame):
         self.status_button = wx.Button(self, label=self.START_LABEL)
         self.status_button.Bind(wx.EVT_BUTTON, self._status_toggled)
 
-        # Demo selection.
-        self.demo_choice = wx.Choice(self, -1)
-        self.demo_choice.Bind(wx.EVT_CHOICE, self._demo_selected)
-
         # Training notes.
         self.notes_button = wx.Button(self, label=self.NOTES_LABEL)
         self.notes_button.Bind(wx.EVT_BUTTON, self._notes_pressed)
@@ -82,7 +78,6 @@ class InsecurityDemosFrame(wx.Frame):
         demo_box = wx.StaticBox(self, -1, self.DEMO_LABEL)
         demo_sizer = wx.StaticBoxSizer(demo_box, wx.HORIZONTAL)
         demo_sizer.Add(self.status_button, flag=flags, border=self.BORDER)
-        demo_sizer.Add(self.demo_choice, flag=flags, border=self.BORDER)
         demo_sizer.Add(self.notes_button, flag=flags, border=self.BORDER)
 
         control_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -98,7 +93,6 @@ class InsecurityDemosFrame(wx.Frame):
 
         # Load data.
         self.current_demo_set.initialize_data()
-        self._populate_demo_choices()
         self._demo_selected()
         if not wlan.has_oui_database():
             dialog = wx.MessageDialog(self,
@@ -111,12 +105,6 @@ class InsecurityDemosFrame(wx.Frame):
             dialog.ShowModal()
             dialog.Destroy()
 
-
-    def _populate_demo_choices(self):
-        choices = [self.CHOOSE_DEMO_LABEL] + self.current_demo_set.demo_names()
-        self.demo_choice.SetItems(choices)
-        self.demo_choice.SetSelection(0)
-        self.GetSizer().Fit(self)
 
     def _update_oui_database(self, event=None):
         dialog = wx.MessageDialog(self,
@@ -131,20 +119,15 @@ class InsecurityDemosFrame(wx.Frame):
     def _status_toggled(self, event):
         label = self.status_button.GetLabel()
         enabled = label == self.START_LABEL
-        demo_name = self.demo_choice.GetStringSelection()
-        enabled = self.current_demo_set.enable_demo(demo_name, enabled)
+        enabled = self.current_demo_set.enable_demo(enabled)
         if enabled:
             label = self.STOP_LABEL
         else:
             label = self.START_LABEL
         self.status_button.SetLabel(label)
-        self.demo_choice.Enable(not enabled)
 
     def _demo_selected(self, event=None):
-        self.status_button.Enable(self.demo_choice.GetSelection() != 0)
-        demo = self.demo_choice.GetStringSelection()
-        self._update_notes(demo)
-        self.current_demo_set.select_demo(demo)
+        self._update_notes(self.current_demo_set.current_demo)
 
     def _notes_pressed(self, event):
         if not self.notes_window:
@@ -154,14 +137,13 @@ class InsecurityDemosFrame(wx.Frame):
             sizer.Add(self.html, 1, wx.GROW)
             self.notes_window.SetSizer(sizer)
             self.notes_window.Show()
-            demo = self.demo_choice.GetStringSelection()
-            self._update_notes(demo)
+            self._update_notes(self.current_demo_set.current_demo)
         else:
             self.notes_window.Raise()
 
     def _update_notes(self, demo):
         if self.notes_window:
-            file_name = demo.replace(' ', '_')
+            file_name = demo.TITLE.replace(' ', '_')
             file_name = file_name.replace("'",'')
             file_name = file_name.replace('-','_')
             file_name = file_name.replace('.','')
@@ -221,7 +203,7 @@ class InsecurityDemosFrame(wx.Frame):
         """Called when the About... button is clicked."""
         info = wx.AboutDialogInfo()
         info.Name = self.TITLE
-        info.Version = '0.0.1'
+        info.Version = '0.0.2'
         info.Copyright = '(C) Schloss 2013'
         info.Description = ('A packaged, graphical user interface for '
                             'demonstrating various digital security threats '
@@ -229,8 +211,8 @@ class InsecurityDemosFrame(wx.Frame):
                             'functionality in a training room context.')
         info.WebSite = 'https://github.com/schloss/insecurity-demos'
         info.Developers = ['D.G. Vole',
-                           'Smari McCarthy',
                            'Poser',
+                           'Smari McCarthy',
                            'Samir Nassar']
         info.License = 'GNU General Public License, version 3'
         wx.AboutBox(info)
@@ -238,6 +220,6 @@ class InsecurityDemosFrame(wx.Frame):
 if __name__ == "__main__":
     import sys
     app = wx.App()
-    frame = InsecurityDemosFrame(None, sys.stdout)
+    frame = InsecurityDemosFrame(None)
     frame.Show(True)
     app.MainLoop()

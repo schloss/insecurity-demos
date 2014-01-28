@@ -15,6 +15,7 @@ IMAGE_UNLOCKED = os.path.join(os.path.dirname(__file__),
                               'unlocked_small.png')
 
 UserModifiedEvent, EVT_USER_MODIFIED = wx.lib.newevent.NewEvent()
+DemoSelectedEvent, EVT_DEMO_SELECTED = wx.lib.newevent.NewEvent()
 
 class WirelessDemoSet():
     """A collection of wireless insecurity demos."""
@@ -32,12 +33,14 @@ class WirelessDemoSet():
     TSHARK_POLL_INTERVAL = 500
 
     def __init__(self, parent):
+        self.current_demo = self.DEMOS[0]
         self._polling_demo = None
         self.timer = wx.Timer()
         self.timer.Bind(wx.EVT_TIMER, self._poll_tools)
         self.tshark = None
         self.interfaces = []
         self.networks = []
+        self.is_running = False
         self._init_control_panel(parent)
         self._init_data_panel(parent)
 
@@ -46,6 +49,7 @@ class WirelessDemoSet():
 
     def initialize_data(self):
         self._interface_refresh()
+        self._network_refresh()
 
     def merge_users(self, new_users):
         users_dict = {}
@@ -105,73 +109,27 @@ class WirelessDemoSet():
                 else:
                     self.data_grid.AddObject(new_user)
 
-    def demo_names(self):
-        return [demo.TITLE for demo in self.DEMOS]
-
-    def select_demo(self, demo):
-        demo = self._get_demo(demo)
-        if demo:
-            self._enable_interface_panel(True)
-            self._enable_network_panel(demo.WIRELESS_NETWORKS_CONTROL)
-            if not demo.WIRELESS_NETWORKS_CONTROL:
-                self.network_choice.SetSelection(0)
-                self._network_selected()
-        else:
-            self._enable_interface_panel(False)
-            self._enable_network_panel(False)
-
-    def enable_demo(self, demo_title, is_enabled):
-        demo = self._get_demo(demo_title)
-        if not demo:
-            return False
-
-        # Check that the demo has everything it needs to start.
-        network = self._get_network()
-        if (is_enabled and
-            demo.REQUIRES_NETWORK and
-            not network):
-            dialog = wx.MessageDialog(self.control_panel,
-                                      "Please select a wireless network "
-                                      "and try again.",
-                                      "Network Required",
-                                      wx.OK | wx.ICON_INFORMATION)
-            dialog.ShowModal()
-            dialog.Destroy()
-            return False
-        if (is_enabled and
-            demo.REQUIRES_NETWORK_PASSWORD and
-            not network.password):
-            dialog = wx.MessageDialog(self.control_panel,
-                                      "Please enter a password for the "
-                                      "wireless network and try again.",
-                                      "Password Required",
-                                      wx.OK | wx.ICON_INFORMATION)
-            dialog.ShowModal()
-            dialog.Destroy()
-            return False
-
-        # Enable UI elements as appropriate.
-        self._enable_network_panel(not is_enabled and
-                                   demo.WIRELESS_NETWORKS_CONTROL)
+    def enable_demo(self, is_enabled):
         self._enable_interface_panel(not is_enabled)
-        wx.CallAfter(self._enable_demo, demo, is_enabled)
+        wx.CallAfter(self._enable_demo, is_enabled)
+        self.is_running = is_enabled
         return is_enabled
 
-    def _enable_demo(self, demo, is_enabled):
+    def _enable_demo(self, is_enabled):
         if not is_enabled:
             self.timer.Stop()
             self.tshark.stop_capture()
             self.tshark = None
             self._polling_demo = None
             return
-        # Update the list of available networks before every demo.
-        self._network_refresh()
-        # Determine the channel of the network to monitor, if any.
+        # Determine the demo to run and wireless channel.
         network = self._get_network()
         if network:
             channel = network.channel
+            demo = self.DEMOS[1]
         else:
             channel = None
+            demo = self.DEMOS[0]
         # Put the interface into the correct mode.
         interface = self._get_interface()
         if (interface.monitor_mode and
@@ -205,25 +163,11 @@ class WirelessDemoSet():
         self.tshark.start_capture()
         self.timer.Start(self.TSHARK_POLL_INTERVAL)
 
-    def _enable_network_panel(self, is_enabled):
-        for control in (self.network_choice,
-                        self.network_refresh_button):
-            control.Enable(is_enabled)
-        if is_enabled:
-            self._network_selected()
-
     def _enable_interface_panel(self, is_enabled):
         for control in (self.monitor_mode_label,
                         self.interface_choice,
                         self.interface_refresh_button):
             control.Enable(is_enabled)
-
-
-    def _get_demo(self, title):
-        for demo in self.DEMOS:
-            if demo.TITLE == title:
-                return demo
-        return None
 
     def _get_interface(self):
         name = self.interface_choice.GetStringSelection()
@@ -446,11 +390,8 @@ class WirelessDemoSet():
             label = self.MONITOR_MODE_LABEL_OFF
         self.monitor_mode_label.SetLabel(label)
 
-    def _network_selected(self, event=None):
-        network = self._get_network()
-        if network == None:
-            f = None
-        else:
+    def _filter_by_network(self, network):
+        if network:
             f = olv.Filter.TextSearch(self.data_grid,
                                       columns=(self.current_network_column,),
                                       text=network.essid)
@@ -459,8 +400,21 @@ class WirelessDemoSet():
                     self._network_password_input()
                 i = self.network_choice.GetSelection()
                 self.network_choice.SetItemBitmap(i, wx.Bitmap(IMAGE_UNLOCKED))
+        else:
+            f = None
         self.data_grid.SetFilter(f)
         self.data_grid.RepopulateList()
+
+    def _network_selected(self, event):
+        network = self._get_network()
+        self._filter_by_network(network)
+        if self.is_running:
+            self.enable_demo(False)
+            if network:
+                self.current_demo = self.DEMOS[1]
+            else:
+                self.current_demo = self.DEMOS[0]
+            self.enable_demo(True)
 
     def _network_refresh(self, event=None):
         interface = self.interface_choice.GetStringSelection()
@@ -494,7 +448,7 @@ class WirelessDemoSet():
                     self.network_choice.SetStringSelection(str(current_network))
                 else:
                     self.network_choice.SetSelection(0)
-        self._network_selected()
+        self._filter_by_network(self._get_network())
 
     def _network_password_input(self):
         network = self._get_network()
