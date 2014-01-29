@@ -40,6 +40,7 @@ class WirelessDemoSet():
         self.tshark = None
         self.interfaces = []
         self.networks = []
+        self.network = None
         self.is_running = False
         self._init_control_panel(parent)
         self._init_data_panel(parent)
@@ -123,9 +124,8 @@ class WirelessDemoSet():
             self._polling_demo = None
             return
         # Determine the demo to run and wireless channel.
-        network = self._get_network()
-        if network:
-            channel = network.channel
+        if self.network:
+            channel = self.network.channel
             demo = self.DEMOS[1]
         else:
             channel = None
@@ -150,7 +150,7 @@ class WirelessDemoSet():
         if demo.TSHARK_SUPPLY_PASSWORD:
             prefs = (demo.TSHARK_PREFERENCES +
                      ['uat:80211_keys:\\"wpa-pwd\\",\\"%s:%s\\"' %
-                      (network.password, network.essid)])
+                      (self.network.password, self.network.essid)])
         else:
             prefs = demo.TSHARK_PREFERENCES
         self.tshark = TShark(interface=interface_name,
@@ -174,12 +174,6 @@ class WirelessDemoSet():
         for i in self.interfaces:
             if i.interface_name == name:
                 return i
-        return None
-
-    def _get_network(self):
-        if self.network_choice.GetSelection() >= 0:
-            i = self.network_choice.GetSelection()
-            return self.network_choice.GetClientData(i)
         return None
 
     def _init_control_panel(self, parent):
@@ -403,7 +397,14 @@ class WirelessDemoSet():
     def _network_selected(self, event):
         # Ask the user for a new password for the selected network.
         network = event.GetClientObject()
-        self._network_password_input(network)
+        if self._network_password_input(network):
+            self.network = network
+        else:
+            if self.network:
+                self.network_choice.SetStringSelection(str(self.network))
+            else:
+                self.network_choice.SetSelection(0)
+            return
 
         # Update the padlock associated with the selected network.
         index = event.GetSelection()
@@ -454,7 +455,7 @@ class WirelessDemoSet():
                     self.network_choice.SetStringSelection(str(current_network))
                 else:
                     self.network_choice.SetSelection(0)
-        self._filter_by_network(self._get_network())
+        self._filter_by_network(self.network)
 
     def _network_password_input(self, network):
         if not network:
@@ -469,12 +470,9 @@ class WirelessDemoSet():
             password = dialog.GetValue()
             if password == '':
                 password = None
-            is_changed = (password == network.password)
             network.password = password
-        else:
-            is_changed = False
         dialog.Destroy()
-        return is_changed
+        return status == wx.ID_OK
 
 def length_sorter(x, y):
     """Sort first by length and then by string representation."""
