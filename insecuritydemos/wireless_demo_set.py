@@ -396,6 +396,7 @@ class WirelessDemoSet():
 
     def _network_selected(self, event):
         # Ask the user for a new password for the selected network.
+        old_network = self.network
         network = event.GetClientObject()
         if self._network_password_input(network):
             self.network = network
@@ -407,21 +408,23 @@ class WirelessDemoSet():
             return
 
         # Update the padlock associated with the selected network.
-        index = event.GetSelection()
-        if network.password:
-            self.network_choice.SetItemBitmap(index, wx.Bitmap(IMAGE_UNLOCKED))
-        else:
-            self.network_choice.SetItemBitmap(index, wx.Bitmap(IMAGE_LOCKED))
+        if self.network:
+            i = event.GetSelection()
+            if self.network.password:
+                self.network_choice.SetItemBitmap(i, wx.Bitmap(IMAGE_UNLOCKED))
+            else:
+                self.network_choice.SetItemBitmap(i, wx.Bitmap(IMAGE_LOCKED))
 
         # Restart the current demo on the new network.
-        self._filter_by_network(network)
-        if self.is_running:
-            self.enable_demo(False)
-            if network:
-                self.current_demo = self.DEMOS[1]
-            else:
-                self.current_demo = self.DEMOS[0]
-            self.enable_demo(True)
+        if self.network != old_network:
+            self._filter_by_network(network)
+            if self.is_running:
+                self.enable_demo(False)
+                if network:
+                    self.current_demo = self.DEMOS[1]
+                else:
+                    self.current_demo = self.DEMOS[0]
+                self.enable_demo(True)
 
     def _network_refresh(self, event=None):
         interface = self.interface_choice.GetStringSelection()
@@ -458,8 +461,8 @@ class WirelessDemoSet():
         self._filter_by_network(self.network)
 
     def _network_password_input(self, network):
-        if not network:
-            return
+        if network is None:
+            return True
         dialog = wx.PasswordEntryDialog(self.control_panel,
                                         message = "Enter a password for the"
                                         "\"%s\" network." % network.essid,
