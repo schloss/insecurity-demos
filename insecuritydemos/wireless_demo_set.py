@@ -395,18 +395,24 @@ class WirelessDemoSet():
             f = olv.Filter.TextSearch(self.data_grid,
                                       columns=(self.current_network_column,),
                                       text=network.essid)
-            if not network.password:
-                while not network.password:
-                    self._network_password_input()
-                i = self.network_choice.GetSelection()
-                self.network_choice.SetItemBitmap(i, wx.Bitmap(IMAGE_UNLOCKED))
         else:
             f = None
         self.data_grid.SetFilter(f)
         self.data_grid.RepopulateList()
 
     def _network_selected(self, event):
-        network = self._get_network()
+        # Ask the user for a new password for the selected network.
+        network = event.GetClientObject()
+        self._network_password_input(network)
+
+        # Update the padlock associated with the selected network.
+        index = event.GetSelection()
+        if network.password:
+            self.network_choice.SetItemBitmap(index, wx.Bitmap(IMAGE_UNLOCKED))
+        else:
+            self.network_choice.SetItemBitmap(index, wx.Bitmap(IMAGE_LOCKED))
+
+        # Restart the current demo on the new network.
         self._filter_by_network(network)
         if self.is_running:
             self.enable_demo(False)
@@ -450,20 +456,25 @@ class WirelessDemoSet():
                     self.network_choice.SetSelection(0)
         self._filter_by_network(self._get_network())
 
-    def _network_password_input(self):
-        network = self._get_network()
+    def _network_password_input(self, network):
         if not network:
             return
         dialog = wx.PasswordEntryDialog(self.control_panel,
-                                        "Enter a password for the \"%s\""
-                                        " network." % network.essid,
-                                        "Network Password",
-                                        network.password or '')
+                                        message = "Enter a password for the"
+                                        "\"%s\" network." % network.essid,
+                                        caption = "Network Password",
+                                        value = network.password or '')
         status = dialog.ShowModal()
         if status == wx.ID_OK:
             password = dialog.GetValue()
+            if password == '':
+                password = None
+            is_changed = (password == network.password)
             network.password = password
+        else:
+            is_changed = False
         dialog.Destroy()
+        return is_changed
 
 def length_sorter(x, y):
     """Sort first by length and then by string representation."""
