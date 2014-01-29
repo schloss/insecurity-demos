@@ -26,9 +26,9 @@ class WirelessDemoSet():
     BORDER = 5
     REFRESH_LABEL = "Refresh"
     NETWORK_INTERFACE_LABEL = "Network Interface"
-    WIRELESS_NETWORK_LABEL = "Wireless Network"
+    WIRELESS_NETWORK_LABEL = "Sniff..."
     MONITOR_MODE_LABEL_OFF = "Monitor mode is OFF."
-    SELECT_NETWORK_LABEL = "Select a network..."
+    SELECT_NETWORK_LABEL = "Meta-data on all networks"
     TSHARK_SEPARATOR = ','
     TSHARK_POLL_INTERVAL = 500
 
