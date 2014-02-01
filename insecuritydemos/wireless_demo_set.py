@@ -419,6 +419,12 @@ class WirelessDemoSet():
         if self.network != old_network:
             self._filter_by_network(network)
             if self.is_running:
+                # Reset sniffability of all users.
+                for user in self.get_users():
+                    user.sniffable = False
+                    user.eapol_flags = 0
+                self.data_grid.RepopulateList()
+                # Restart the appropriate demo.
                 self.enable_demo(False)
                 if network:
                     self.current_demo = self.DEMOS[1]
