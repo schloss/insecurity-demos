@@ -26,21 +26,26 @@ class HttpBasicAuthSniffDemo():
     MONITOR_MODE = True
     REQUIRES_NETWORK = True
     REQUIRES_NETWORK_PASSWORD = True
-    TSHARK_FIELDS = ["eapol",
-                     "eapol.keydes.key_info",
+    TSHARK_FIELDS = ["eapol.keydes.key_info",
                      "wlan.sa",
                      "wlan.da",
                      "ip.src",
+                     "dns.qry.name",
+                     "wlan_mgt.ssid",
+                     "wlan.bssid",
                      "http.authbasic"]
-    TSHARK_READ_FILTER = "http.authbasic || eapol"
-    TSHARK_CAPTURE_FILTER = None
+    TSHARK_READ_FILTER = None
+    TSHARK_CAPTURE_FILTER = ("type data or "
+                             "ether proto 0x888e or "
+                             "subtype probereq or "
+                             "udp src port 5353")
     TSHARK_SUPPLY_PASSWORD = True
     TSHARK_PREFERENCES = ["wlan.enable_decryption:TRUE"]
 
     def interpret_tshark_output(self, fields):
         if len(fields) == len(self.TSHARK_FIELDS):
-            if fields[0] == "eapol":
-                key_info = fields[1]
+            if fields[0]:
+                key_info = fields[0]
                 if key_info == "0x008a":
                     message_id = 1
                 elif key_info == "0x010a":
@@ -50,24 +55,26 @@ class HttpBasicAuthSniffDemo():
                 elif key_info == "0x030a":
                     message_id = 4
                 else:
-                    if key_info:
-                        print "UNKNOWN EAPOL KEY INFO:", fields
+                    print "UNKNOWN EAPOL KEY INFO:", fields
                     return None
                 if message_id in (1, 3):
-                    user_mac = fields[3]
-                    ap_mac = fields[2]
-                elif message_id in (2, 4):
                     user_mac = fields[2]
-                    ap_mac = fields[3]
+                    ap_mac = fields[1]
+                elif message_id in (2, 4):
+                    user_mac = fields[1]
+                    ap_mac = fields[2]
                 return {'mac': user_mac,
                         'current_network': {'bssid': ap_mac},
                         'eapol_flags': 1 << (message_id - 1)}
             else:
-                user = {'mac': fields[2]}
-                if fields[4]:
-                    user["ip"] = fields[4]
-                if fields[5]:
-                    username, password = fields[5].split(':')
+                user = {'mac': fields[1],
+                        'ip': fields[3] or None,
+                        'hostname': fields[4] or None}
+                if fields[5] or fields[6]:
+                    user['current_network'] = {'essid': fields[5] or None,
+                                               'bssid': fields[6] or None}
+                if fields[7]:
+                    username, password = fields[7].split(':')
                     user["credentials"] = [{"username": username,
                                            "password": password}]
                 return user
