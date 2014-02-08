@@ -282,7 +282,7 @@ class WirelessDemoSet():
                 olv.ColumnDefn("Wifi Chipset", "left", 175, "hardware",
                                isEditable=False),
                 olv.ColumnDefn("IP Address", "left", 175, "ip", isEditable=False),
-                #olv.ColumnDefn("Hostname", "left", 175, "hostname", isEditable=False),
+                olv.ColumnDefn("Hostname", "left", 175, "hostname", isEditable=False),
                 self.current_network_column,
                 creds_column,
                 networks_column]
