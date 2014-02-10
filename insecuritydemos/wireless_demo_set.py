@@ -39,9 +39,12 @@ class WirelessDemoSet():
         self.timer.Bind(wx.EVT_TIMER, self._poll_tools)
         self.tshark = None
         self.interfaces = []
+        self.interface = None
+        self.deauth_interface = None
         self.networks = []
         self.network = None
         self.is_running = False
+        self.is_deauthing = False
         self._init_control_panel(parent)
         self._init_data_panel(parent)
 
@@ -67,8 +70,7 @@ class WirelessDemoSet():
 
     def destroy(self):
         for i in self.interfaces:
-            if i.monitor_mode:
-                i.disable_monitor_mode()
+            i.disable_monitor_mode()
 
     def _poll_tools(self, event):
         while self.tshark:
@@ -109,27 +111,35 @@ class WirelessDemoSet():
                     self.data_grid.RefreshObject(old_user)
                 else:
                     self.data_grid.AddObject(new_user)
+                    if self.is_deauthing:
+                        wlan.force_deauthentication(
+                            new_user.current_network.bssid,
+                            new_user.mac,
+                            self.deauth_interface.monitor_mode)
 
     def enable_demo(self, is_enabled):
+        if self.current_demo == self.DEMOS[0]:
+            self.deauth_checkbox.Enable(not is_enabled)
+            self.deauth_interface_choice.Enable(not is_enabled)
+            if is_enabled:
+                self.deauth_checkbox.SetValue(False)
+                self.is_deauthing = False
         self._enable_interface_panel(not is_enabled)
-        wx.CallAfter(self._enable_demo, is_enabled)
+        wx.CallAfter(self._enable_demo, self.current_demo, is_enabled)
         self.is_running = is_enabled
         return is_enabled
 
-    def _enable_demo(self, is_enabled):
+    def _enable_demo(self, demo, is_enabled):
         if not is_enabled:
             self.timer.Stop()
             self.tshark.stop_capture()
             self.tshark = None
             self._polling_demo = None
             return
-        # Determine the demo to run and wireless channel.
         if self.network:
             channel = self.network.channel
-            demo = self.DEMOS[1]
         else:
             channel = None
-            demo = self.DEMOS[0]
         # Put the interface into the correct mode.
         interface = self._get_interface()
         if (interface.monitor_mode and
@@ -137,7 +147,7 @@ class WirelessDemoSet():
             interface.disable_monitor_mode()
             self._interface_refresh()
             interface = self._get_interface()
-        if demo.MONITOR_MODE and not interface.monitor_mode:
+        if demo.MONITOR_MODE:
             interface.enable_monitor_mode(channel)
             self._interface_refresh()
         elif not demo.MONITOR_MODE and interface.monitor_mode:
@@ -146,7 +156,7 @@ class WirelessDemoSet():
         # Start TShark with the demo parameters.
         self._polling_demo = demo
         interface = self._get_interface()
-        interface_name = interface.monitor_mode or interface.interface_name
+        interface_name = interface.monitor_mode or interface.name
         if demo.TSHARK_SUPPLY_PASSWORD:
             prefs = (demo.TSHARK_PREFERENCES +
                      ['uat:80211_keys:\\"wpa-pwd\\",\\"%s:%s\\"' %
@@ -172,7 +182,14 @@ class WirelessDemoSet():
     def _get_interface(self):
         name = self.interface_choice.GetStringSelection()
         for i in self.interfaces:
-            if i.interface_name == name:
+            if i.name == name:
+                return i
+        return None
+
+    def _get_deauth_interface(self):
+        name = self.deauth_interface_choice.GetStringSelection()
+        for i in self.interfaces:
+            if i.name == name:
                 return i
         return None
 
@@ -203,6 +220,16 @@ class WirelessDemoSet():
         self.network_refresh_button = wx.Button(self.control_panel,
                                                 label=self.REFRESH_LABEL)
         self.network_refresh_button.Bind(wx.EVT_BUTTON, self._network_refresh)
+        self.deauth_checkbox = wx.CheckBox(self.control_panel,
+                                           -1,
+                                           "Forced deauth using:")
+        self.deauth_checkbox.Bind(wx.EVT_CHECKBOX,
+                                  self._deauth_toggled)
+        self.deauth_interface_choice = wx.Choice(self.control_panel, -1,
+                                                 size=wx.Size(100, -1),
+                                                 choices=[])
+        self.deauth_interface_choice.Bind(wx.EVT_CHOICE,
+                                          self._deauth_interface_selected)
 
         # Layout.
         sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -229,6 +256,12 @@ class WirelessDemoSet():
                           flag=flags,
                           border=self.BORDER)
         network_sizer.Add(self.network_refresh_button,
+                          flag=flags,
+                          border=self.BORDER)
+        network_sizer.Add(self.deauth_checkbox,
+                          flag=flags,
+                          border=self.BORDER)
+        network_sizer.Add(self.deauth_interface_choice,
                           flag=flags,
                           border=self.BORDER)
         sizer.Add(network_sizer, flag=flags, border=self.BORDER)
@@ -329,7 +362,6 @@ class WirelessDemoSet():
         self.data_grid.RefreshObject(event.user)
 
     def _interface_refresh(self, event=None):
-        current_interface = self.interface_choice.GetStringSelection()
         new_interfaces = wlan.enumerate_interfaces()
 
         # Retain knowledge of which interfaces are in monitor
@@ -341,12 +373,13 @@ class WirelessDemoSet():
         # state of an interface.
         for new in new_interfaces:
             for old in self.interfaces:
-                if new.interface_name == old.interface_name:
+                if new.name == old.name:
                     new.monitor_mode = old.monitor_mode
+                    new.monitor_mode_channel = old.monitor_mode_channel
 
         # Don't list monitoring interfaces as separate interfaces.
         for i in new_interfaces:
-            name = i.interface_name
+            name = i.name
             for j in new_interfaces:
                 if name == j.monitor_mode:
                     new_interfaces.remove(i)
@@ -355,7 +388,7 @@ class WirelessDemoSet():
         # interface. Whether an interface is actually in monitor mode
         # could be better verified using something like iwconfig.
         for i in new_interfaces:
-            if i.interface_name.startswith('mon'):
+            if i.name.startswith('mon'):
                 new_interfaces.remove(i)
 
         self.interfaces = new_interfaces
@@ -364,25 +397,40 @@ class WirelessDemoSet():
         # track changes in monitor mode.
         interface_names = []
         for i in self.interfaces:
-            if i.interface_name == current_interface:
-                current_interface = i.interface_name
-            interface_names.append(i.interface_name)
+            interface_names.append(i.name)
         self.interface_choice.SetItems(interface_names)
-        if current_interface in interface_names:
-            self.interface_choice.SetStringSelection(current_interface)
+        self.deauth_interface_choice.SetItems(interface_names)
+        if self.interface and self.interface.name in interface_names:
+            self.interface_choice.SetStringSelection(self.interface.name)
         else:
             self.interface_choice.SetSelection(0)
+        if (self.deauth_interface and
+            self.deauth_interface.name in interface_names):
+            self.deauth_interface_choice.SetStringSelection(
+                self.deauth_interface.name)
+        else:
+            self.deauth_interface_choice.SetSelection(0)
 
         self._interface_selected()
+        self._deauth_interface_selected()
 
     def _interface_selected(self, event=None):
         # Show the user the state of monitor mode.
-        interface = self._get_interface()
-        if interface and interface.monitor_mode:
-            label = "Monitoring as %s." % interface.monitor_mode
+        self.interface = self._get_interface()
+        if self.interface and self.interface.monitor_mode:
+            label = "Monitoring as %s." % self.interface.monitor_mode
         else:
             label = self.MONITOR_MODE_LABEL_OFF
         self.monitor_mode_label.SetLabel(label)
+
+    def _deauth_interface_selected(self, event=None):
+        old_interface = self.deauth_interface
+        self.deauth_interface = self._get_deauth_interface()
+        # Disable and enable monitor modes as needed.
+        if self.is_running and self.is_deauthing:
+            self.deauth_interface.enable_monitor_mode(self.network.channel)
+            if (old_interface and self.interface.name != old_interface.name):
+                self.deauth_interface.disable_monitor_mode()
 
     def _filter_by_network(self, network):
         if network:
@@ -415,9 +463,13 @@ class WirelessDemoSet():
             else:
                 self.network_choice.SetItemBitmap(i, wx.Bitmap(IMAGE_LOCKED))
 
-        # Restart the current demo on the new network.
+        # Restart the appropriate demo on the new network.
         if self.network != old_network:
-            self._filter_by_network(network)
+            self._filter_by_network(self.network)
+            if self.network:
+                new_demo = self.DEMOS[1]
+            else:
+                new_demo = self.DEMOS[0]
             if self.is_running:
                 # Reset sniffability of all users.
                 for user in self.get_users():
@@ -426,11 +478,10 @@ class WirelessDemoSet():
                 self.data_grid.RepopulateList()
                 # Restart the appropriate demo.
                 self.enable_demo(False)
-                if network:
-                    self.current_demo = self.DEMOS[1]
-                else:
-                    self.current_demo = self.DEMOS[0]
+                self.current_demo = new_demo
                 self.enable_demo(True)
+            else:
+                self.current_demo = new_demo
 
     def _network_refresh(self, event=None):
         interface = self.interface_choice.GetStringSelection()
@@ -482,6 +533,10 @@ class WirelessDemoSet():
             network.password = password
         dialog.Destroy()
         return status == wx.ID_OK
+
+    def _deauth_toggled(self, event):
+        self.is_deauthing = event.IsChecked()
+        self._deauth_interface_selected()
 
 def length_sorter(x, y):
     """Sort first by length and then by string representation."""

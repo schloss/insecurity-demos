@@ -5,6 +5,14 @@ import subprocess
 OUI_FILE_PATH = '/usr/share/aircrack-ng/airodump-ng-oui.txt'
 MAC_HARDWARE = {}
 
+def force_deauthentication(ap_mac, target_mac, interface):
+    """Using the given interface, actively bumps a target MAC from the
+    given network, forcing the device to re-authenticate."""
+    cmd = "aireplay-ng -0 1 -a %s -c %s %s" % (ap_mac, target_mac, interface)
+    print "Forcing deauthentication: %s" % cmd
+    output = subprocess.check_output(cmd, shell=True)
+    print "Output: %s" % output
+
 def enumerate_networks(interface):
     """Returns a list of all wireless networks found by the given interface."""
     if not interface:
@@ -131,25 +139,29 @@ def obscure_text(text):
 class Interface():
 
     def __init__(self,
-                 interface_name,
+                 name,
                  chipset=None,
                  driver=None,
                  monitor_mode=None,
                  monitor_mode_channel=None):
-        self.interface_name = interface_name
+        self.name = name
         self.chipset = chipset
         self.driver = driver
         self.monitor_mode = monitor_mode
         self.monitor_mode_channel = monitor_mode_channel
 
     def enable_monitor_mode(self, channel=None):
-        cmd = "airmon-ng start %s %s" % (self.interface_name, channel or '')
+        if self.monitor_mode:
+            print ("Interface %s already in monitor mode on channel %s." %
+                   (self.name, self.monitor_mode_channel))
+            return
+        cmd = "airmon-ng start %s %s" % (self.name, channel or '')
         print "Entering monitor mode: %s" % cmd
         output = subprocess.check_output(cmd, shell=True)
         results = interfaces_from_airmon_ng(output)
         assert(results)
         for interface in results:
-            if interface.interface_name == self.interface_name:
+            if interface.name == self.name:
                 assert(interface.monitor_mode)
                 self.monitor_mode = interface.monitor_mode
                 self.monitor_mode_channel = channel
@@ -157,7 +169,7 @@ class Interface():
         else:
             print "Oops: Something unexpected happened."
             print ("Could not verify that the %s interface is "
-                   "in monitor mode." % self.interface_name)
+                   "in monitor mode." % self.name)
 
     def disable_monitor_mode(self):
         if not self.monitor_mode:
@@ -169,17 +181,18 @@ class Interface():
         for x in lines:
             if x.startswith(self.monitor_mode) and x.endswith("(removed)"):
                 self.monitor_mode = None
+                self.monitor_mode_channel = None
                 break
         else:
             print "Oops: Something unexpected happened."
             print ("Could not verify that %s was taken out of monitor mode."
-                   % self.interface_name)
+                   % self.name)
 
     def __str__(self):
-        return self.interface_name
+        return self.name
 
     def __repr__(self):
-        out = ['interface name: %s' % self.interface_name]
+        out = ['interface name: %s' % self.name]
         if self.chipset:
             out.append('chipset: %s' % self.chipset)
         if self.driver:
