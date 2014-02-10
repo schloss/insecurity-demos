@@ -30,7 +30,7 @@ class HttpBasicAuthSniffDemo():
                      "wlan.sa",
                      "wlan.da",
                      "ip.src",
-                     "dns.qry.name",
+                     "dns.ptr.domain_name",
                      "wlan_mgt.ssid",
                      "wlan.bssid",
                      "http.authbasic"]
