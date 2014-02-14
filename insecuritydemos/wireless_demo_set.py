@@ -25,6 +25,7 @@ class WirelessDemoSet():
              wireless_demos.HttpBasicAuthSniffDemo(),)
     BORDER = 5
     REFRESH_LABEL = "Refresh"
+    DEAUTH_LABEL = "Force deauth using"
     NETWORK_INTERFACE_LABEL = "Network Interface"
     WIRELESS_NETWORK_LABEL = "Sniff..."
     MONITOR_MODE_LABEL_OFF = "Monitor mode is OFF."
@@ -44,7 +45,6 @@ class WirelessDemoSet():
         self.networks = []
         self.network = None
         self.is_running = False
-        self.is_deauthing = False
         self._init_control_panel(parent)
         self._init_data_panel(parent)
 
@@ -111,19 +111,11 @@ class WirelessDemoSet():
                     self.data_grid.RefreshObject(old_user)
                 else:
                     self.data_grid.AddObject(new_user)
-                    if self.is_deauthing:
-                        wlan.force_deauthentication(
-                            new_user.current_network.bssid,
-                            new_user.mac,
-                            self.deauth_interface.monitor_mode)
 
     def enable_demo(self, is_enabled):
-        if self.current_demo == self.DEMOS[0]:
-            self.deauth_checkbox.Enable(not is_enabled)
-            self.deauth_interface_choice.Enable(not is_enabled)
-            if is_enabled:
-                self.deauth_checkbox.SetValue(False)
-                self.is_deauthing = False
+        self.deauth_button.Enable(is_enabled and
+                                  self.current_demo != self.DEMOS[0] and
+                                  self.interface is not None)
         self._enable_interface_panel(not is_enabled)
         wx.CallAfter(self._enable_demo, self.current_demo, is_enabled)
         self.is_running = is_enabled
@@ -186,13 +178,6 @@ class WirelessDemoSet():
                 return i
         return None
 
-    def _get_deauth_interface(self):
-        name = self.deauth_interface_choice.GetStringSelection()
-        for i in self.interfaces:
-            if i.name == name:
-                return i
-        return None
-
     def _init_control_panel(self, parent):
         self.control_panel = wx.Panel(parent, -1)
 
@@ -220,11 +205,11 @@ class WirelessDemoSet():
         self.network_refresh_button = wx.Button(self.control_panel,
                                                 label=self.REFRESH_LABEL)
         self.network_refresh_button.Bind(wx.EVT_BUTTON, self._network_refresh)
-        self.deauth_checkbox = wx.CheckBox(self.control_panel,
-                                           -1,
-                                           "Forced deauth using:")
-        self.deauth_checkbox.Bind(wx.EVT_CHECKBOX,
-                                  self._deauth_toggled)
+        self.deauth_button = wx.Button(self.control_panel,
+                                       label=self.DEAUTH_LABEL)
+        self.deauth_button.Bind(wx.EVT_BUTTON,
+                                  self._force_deauth)
+        self.deauth_button.Enable(False)
         self.deauth_interface_choice = wx.Choice(self.control_panel, -1,
                                                  size=wx.Size(100, -1),
                                                  choices=[])
@@ -258,11 +243,13 @@ class WirelessDemoSet():
         network_sizer.Add(self.network_refresh_button,
                           flag=flags,
                           border=self.BORDER)
-        network_sizer.Add(self.deauth_checkbox,
-                          flag=flags,
+        network_sizer.Add(self.deauth_button,
+                          flag=(wx.ALIGN_CENTER_VERTICAL |
+                                wx.TOP | wx.BOTTOM | wx.LEFT),
                           border=self.BORDER)
         network_sizer.Add(self.deauth_interface_choice,
-                          flag=flags,
+                          flag=(wx.ALIGN_CENTER_VERTICAL |
+                                wx.TOP | wx.BOTTOM | wx.RIGHT),
                           border=self.BORDER)
         sizer.Add(network_sizer, flag=flags, border=self.BORDER)
         self.control_panel.SetSizer(sizer)
@@ -424,13 +411,13 @@ class WirelessDemoSet():
         self.monitor_mode_label.SetLabel(label)
 
     def _deauth_interface_selected(self, event=None):
-        old_interface = self.deauth_interface
-        self.deauth_interface = self._get_deauth_interface()
-        # Disable and enable monitor modes as needed.
-        if self.is_running and self.is_deauthing:
-            self.deauth_interface.enable_monitor_mode(self.network.channel)
-            if (old_interface and self.interface.name != old_interface.name):
-                self.deauth_interface.disable_monitor_mode()
+        name = self.deauth_interface_choice.GetStringSelection()
+        for i in self.interfaces:
+            if i.name == name:
+                self.deauth_interface = i
+                break
+        else:
+            self.deauth_interface = None
 
     def _filter_by_network(self, network):
         if network:
@@ -534,9 +521,17 @@ class WirelessDemoSet():
         dialog.Destroy()
         return status == wx.ID_OK
 
-    def _deauth_toggled(self, event):
-        self.is_deauthing = event.IsChecked()
-        self._deauth_interface_selected()
+    def _force_deauth(self, event):
+        leave_in_monitor_mode = self.deauth_interface.monitor_mode
+        self.deauth_interface.enable_monitor_mode()
+        for user in self.get_users():
+            if (user.current_network == self.network and
+                not user.sniffable):
+                wlan.force_deauthentication(self.network.bssid,
+                                            user.mac,
+                                            self.deauth_interface.monitor_mode)
+        if not leave_in_monitor_mode:
+            self.deauth_interface.disable_monitor_mode()
 
 def length_sorter(x, y):
     """Sort first by length and then by string representation."""

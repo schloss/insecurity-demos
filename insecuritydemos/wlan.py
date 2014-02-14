@@ -218,13 +218,19 @@ class Network():
             self.bssid = self.bssid.upper()
 
     def __le__(self, x):
+        if not self.essid:
+            return -1
         return self.essid.__le__(x.essid)
 
     def __gt__(self, x):
+        if not self.essid:
+            return 1
         return self.essid.__gt__(x.essid)
 
     def __eq__(self, x):
         if not isinstance(x, Network):
+            return False
+        if not self.essid:
             return False
         return self.essid.__eq__(x.essid)
 
