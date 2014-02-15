@@ -523,7 +523,7 @@ class WirelessDemoSet():
 
     def _force_deauth(self, event):
         leave_in_monitor_mode = self.deauth_interface.monitor_mode
-        self.deauth_interface.enable_monitor_mode()
+        self.deauth_interface.enable_monitor_mode(self.network.channel)
         for user in self.get_users():
             if (user.current_network == self.network and
                 not user.sniffable):
