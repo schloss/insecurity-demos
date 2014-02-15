@@ -30,7 +30,7 @@ class WirelessDemoSet():
     WIRELESS_NETWORK_LABEL = "Sniff..."
     MONITOR_MODE_LABEL_OFF = "Monitor mode is OFF."
     SELECT_NETWORK_LABEL = "Meta-data on all networks"
-    TSHARK_SEPARATOR = ','
+    TSHARK_SEPARATOR = '/t'
     TSHARK_POLL_INTERVAL = 500
 
     def __init__(self, parent):
@@ -78,8 +78,8 @@ class WirelessDemoSet():
                 line = self.tshark.queue.get_nowait()
             except Empty:
                 break
-            line = line.strip()
-            raw_fields = line.split(self.TSHARK_SEPARATOR)
+            line = line[:-1] # Remove newline.
+            raw_fields = self.tshark.split_fields(line)
             fields = self._polling_demo.interpret_tshark_output(raw_fields)
             if fields:
                 print fields

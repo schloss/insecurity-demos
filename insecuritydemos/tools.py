@@ -72,6 +72,15 @@ class TShark(subprocess.Popen):
         self.kill()
         print "...tshark stopped."
 
+    def split_fields(self, line):
+        if self.separator is None or self.separator == '/t':
+            sep = '\t'
+        elif self.separator == '/s':
+            sep = ' '
+        else:
+            sep = self.separator
+        return line.split(sep)
+
 class Airodump(subprocess.Popen):
     """A Pythonic wrapper around the airodump command-line utility."""
 
