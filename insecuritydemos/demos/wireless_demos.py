@@ -68,8 +68,18 @@ class HttpBasicAuthSniffDemo():
                         'eapol_flags': 1 << (message_id - 1)}
             else:
                 user = {'mac': fields[1],
-                        'ip': fields[3] or None,
-                        'hostname': fields[4] or None}
+                        'ip': fields[3] or None}
+                if fields[4]:
+                    raw_hostname = fields[4]
+                    hostnames = [x.strip() for x in raw_hostname.split(',')]
+                    suffix = ".local"
+                    s = set()
+                    for x in hostnames:
+                        if x.endswith(suffix):
+                            s.add(x[:-len(suffix)])
+                        else:
+                            s.add(x)
+                    user['hostname'] = ", ".join(list(s).sort())
                 if fields[5] or fields[6]:
                     user['current_network'] = {'essid': fields[5] or None,
                                                'bssid': fields[6] or None}
