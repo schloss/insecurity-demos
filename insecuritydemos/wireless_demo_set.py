@@ -113,10 +113,17 @@ class WirelessDemoSet():
                     self.data_grid.AddObject(new_user)
 
     def enable_demo(self, is_enabled):
+        # Update the UI before blocking operations begin.
         self.deauth_button.Enable(is_enabled and
                                   self.current_demo != self.DEMOS[0] and
                                   self.interface is not None)
         self._enable_interface_panel(not is_enabled)
+        for user in self.get_users():
+            user.sniffable = False
+            user.eapol_flags = 0
+        self.data_grid.RepopulateList()
+
+        # Call subprocesses that might block.
         wx.CallAfter(self._enable_demo, self.current_demo, is_enabled)
         self.is_running = is_enabled
         return is_enabled
@@ -458,12 +465,6 @@ class WirelessDemoSet():
             else:
                 new_demo = self.DEMOS[0]
             if self.is_running:
-                # Reset sniffability of all users.
-                for user in self.get_users():
-                    user.sniffable = False
-                    user.eapol_flags = 0
-                self.data_grid.RepopulateList()
-                # Restart the appropriate demo.
                 self.enable_demo(False)
                 self.current_demo = new_demo
                 self.enable_demo(True)
