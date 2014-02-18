@@ -10,8 +10,14 @@ def force_deauthentication(ap_mac, target_mac, interface):
     given network, forcing the device to re-authenticate."""
     cmd = "aireplay-ng -0 1 -a %s -c %s %s" % (ap_mac, target_mac, interface)
     print "Forcing deauthentication: %s" % cmd
-    output = subprocess.check_output(cmd, shell=True)
-    print "Output: %s" % output
+    try:
+        output = subprocess.check_output(cmd, shell=True)
+        print "Output: %s" % output
+        return True
+    except subprocess.CalledProcessError:
+        print ("Deauthentication failed, perhaps because network interface "
+               "was not yet in monitor mode.")
+        return False
 
 def enumerate_networks(interface):
     """Returns a list of all wireless networks found by the given interface."""
@@ -45,7 +51,11 @@ def enumerate_interfaces():
     the local host."""
     # XXX : perhaps use iwconfig, which seems faster than airmon-ng for listing
     cmd = "fakeroot airmon-ng"
-    output = subprocess.check_output(cmd, shell=True)
+    try:
+        output = subprocess.check_output(cmd, shell=True)
+    except subprocess.CalledProcessError, err:
+        print "Oops: There was a problem enumerating the network interfaces."
+        raise err
     interfaces = interfaces_from_airmon_ng(output)
     return interfaces
 
@@ -157,7 +167,11 @@ class Interface():
             return
         cmd = "airmon-ng start %s %s" % (self.name, channel or '')
         print "Entering monitor mode: %s" % cmd
-        output = subprocess.check_output(cmd, shell=True)
+        try:
+            output = subprocess.check_output(cmd, shell=True)
+        except subprocess.CalledProcessError, err:
+            print "Oops: There was a problem enabling monitor mode."
+            raise err
         results = interfaces_from_airmon_ng(output)
         assert(results)
         for interface in results:
@@ -176,7 +190,11 @@ class Interface():
             return
         cmd = "airmon-ng stop %s" % self.monitor_mode
         print "Leaving monitor mode: %s" % cmd
-        lines = subprocess.check_output(cmd, shell=True).splitlines()
+        try:
+            lines = subprocess.check_output(cmd, shell=True).splitlines()
+        except subprocess.CalledProcessError, err:
+            print "Oops: There was a problem disabling monitor mode."
+            raise err
         # Verify that the interface was indeed taken out of monitor mode.
         for x in lines:
             if x.startswith(self.monitor_mode) and x.endswith("(removed)"):

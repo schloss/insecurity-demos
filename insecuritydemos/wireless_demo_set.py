@@ -1,5 +1,6 @@
 import json
 import os
+import time
 import wlan
 import wx
 import wx.combo
@@ -525,12 +526,18 @@ class WirelessDemoSet():
     def _force_deauth(self, event):
         leave_in_monitor_mode = self.deauth_interface.monitor_mode
         self.deauth_interface.enable_monitor_mode(self.network.channel)
+        bssid = self.network.bssid
+        interface = self.deauth_interface.monitor_mode
         for user in self.get_users():
             if (user.current_network == self.network and
                 not user.sniffable):
-                wlan.force_deauthentication(self.network.bssid,
-                                            user.mac,
-                                            self.deauth_interface.monitor_mode)
+                if not wlan.force_deauthentication(bssid, user.mac, interface):
+                    # If it doesn't work the first time, it's probably
+                    # because the interface isn't done being put into
+                    # monitor mode, so sleep for a second and try one
+                    # more time. See issue #74.
+                    time.sleep(1)
+                    wlan.force_deauthentication(bssid, user.mac, interface)
         if not leave_in_monitor_mode:
             self.deauth_interface.disable_monitor_mode()
 
