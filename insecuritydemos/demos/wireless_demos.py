@@ -79,7 +79,9 @@ class HttpBasicAuthSniffDemo():
                             s.add(x[:-len(suffix)])
                         else:
                             s.add(x)
-                    user['hostname'] = ", ".join(list(s).sort())
+                    hostnames = list(s)
+                    hostnames.sort()
+                    user['hostname'] = ", ".join(hostnames)
                 if fields[5] or fields[6]:
                     user['current_network'] = {'essid': fields[5] or None,
                                                'bssid': fields[6] or None}
