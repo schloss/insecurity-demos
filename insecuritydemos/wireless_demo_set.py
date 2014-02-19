@@ -534,9 +534,9 @@ class WirelessDemoSet():
                 if not wlan.force_deauthentication(bssid, user.mac, interface):
                     # If it doesn't work the first time, it's probably
                     # because the interface isn't done being put into
-                    # monitor mode, so sleep for a second and try one
+                    # monitor mode, so sleep for a while and try one
                     # more time. See issue #74.
-                    time.sleep(1)
+                    time.sleep(3)
                     wlan.force_deauthentication(bssid, user.mac, interface)
         if not leave_in_monitor_mode:
             self.deauth_interface.disable_monitor_mode()
