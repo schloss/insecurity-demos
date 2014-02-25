@@ -1,13 +1,227 @@
 <html>
-<body>
-<h1>Wifi History Demo</h1>
+<body bgcolor="darkslategray" text="beige" link="palegoldenrod" alink="white" vlink="tan">
+<div style="font-family: Arial;">
 
-<p>Wifi was invented by Albert K. Wifi, a Finnish dissident and coal
-miner.</p>
+<br />
 
-<p>Wifi reached the peak of its popularity during the industrial
-revolution. It gradually faded into obscurity as the popularity of
-steam-powered toasters rose.</p>
+<h1>Session notes: wireless sniffing demos</h1>
 
+<br />
+
+<p>The <strong>wireless sniffing</strong> <em>demo set</em> supports the following demonstrations:</p>
+<ol>
+<li><strong><em><a href="#1">What is your device telling those around you?</a></em></strong> &nbsp; This demo reveals the names of all Wireless networks that were recently used by most nearby Apple iOS devices, as well as each such device's <em>hostname</em>, which is often set, by default, to the full name of its owner.</li>
+
+<br />
+
+<li><strong><em><a href="#2">How careful are your online services about protecting the confidentiality of your passwords when you sign in?</a></em></strong> &nbsp; This demo reveals the usernames and passwords sent by participants who are connected to the training WiFi network when they attempt to login to <em>HTTP Basic</em> authenticated Web sites that are not protected by HTTPS encryption.</li>
+</ol>
+
+<br />
+<hr>
+
+<a name="1" /><h3>1. &nbsp; What is your device telling those around you?</h3>
+
+<p>This demo reveals the names of all Wireless networks that were recently used by most nearby Apple iOS devices, as well as each such device's <em>hostname</em>, which is often set, by default, to the full name of its owner.</p>
+
+<table cellpadding="5" cellspacing="5"><tr><td valign="top">
+<table cellpadding="2" cellspacing="2" frame="box">
+  <tr>
+    <td align="left"><strong>Time</strong></td><td align="right"><em>1:00</em></td>
+  </tr><tr>
+    <td align="left"><strong>Devices</strong></td><td align="right">Apple</td>
+  </tr><tr>
+    <td align="left"><strong>Networks</strong></td><td align="right">WiFi</td>
+  </tr><tr>
+    <td align="left"><strong>Difficulty</strong></td><td align="right">Basic</td>
+  </tr><tr>
+    <td align="left"><strong>Complexity</strong></td><td align="right">Moderate</td>
+  </tr>
+</table>
+
+</td><td valign="top">
+  <strong>Setup</strong>
+  <ul>
+    <li>Identify a volunteer (with an Apple device) before starting the demo. Verify (and ask permission to reveal) her past WiFi networks and device hostname. Write down her MAC address and ask her to disconnect from all WiFi networks</li>
+    <li>If possible, start the demo running before participants re-enter the room and/or re-open their laptops (see below)</li>
+  </ul>
+</td></tr></table>
+
+<table><tr><td valign="top" colspan="2">
+<strong>Walkthrough</strong>
+<ol>
+  <li>Insert an external, USB WiFi adapter (if necessary) and click the <em>Network Interface</em> <em>Refresh</em> button. Select the WiFi interface with which you will capture traffic. Put the main app window on-projector (unless you are saving it for a "big reveal" later). Click the <em>Start</em> button</li>
+  <li>Adjust the window and column widths to give <em>Previous WiFi Networks</em> plenty of room, without obscuring the <em>Hostnames</em> column (you will be forced to expand the <em>Credentials</em> column, as well, though you won't be using it for this demo). <em>Note:</em> You can sort entries according to the values in different columns by clicking on column headers</li>
+  <li>Select your training WiFi network from the <em>Sniff...</em> menu and enter your WPA key</li>
+  <li>Ask participants to open up their laptops (or invite them back into the training room after a break)</li>
+  <li>When you see your volunteer participant's hostname appear, ask her for permission to reveal her device's hostname, then uncheck the anonymity checkbox in the corresponding cell. Ask for additional volunteers if other hostnames were captured</li>
+  <li><em>Discussion:</em> Discuss the potential sensitivity of revealed hostnames (particularly any hostnames set to the real name of the corresponding device's owner)</li>
+  <li>Select <em>Meta-data on all networks</em> from the <em>Sniff...</em> menu</li>
+  <li>Give the demo some time to capture traffic while explaining the various columns (MAC address, WiFi chipset, etc) and discussing how these meta-data are now associated with the hostname and other exposed information</li>
+  <li><em>Note:</em> You can force your participants' devices to probe for saved networks by disabling the training WiFi network, temporarily, using the access point's administrative Web interface</li>
+  <li>Sort by <em>Last WiFi Network</em> and scroll down (if necessary) to find your training WiFi network</li>
+  <li>Ask your volunteer participant for permission to reveal her <em>Previous WiFi Networks</em>, then uncheck the anonymity checkbox in the corresponding cell. Ask for additional volunteers if other (lengthy) lists of previous WiFi networks were captured</li>
+  <li><em>Discussion:</em> Discuss the potential sensitivity of information revealed by previous WiFi networks</li>
+  <li>Walk at least one user through the <em>Mitigation</em> steps below and run the demo a second time to verify that the mitigation steps were effective</li>
+</ol>
+</td></tr>
+
+<tr><td valign="top" colspan="2">
+<strong>Mitigation</strong>
+<ol>
+  <li>Disconnect from the WiFi network</li>
+  <li>Delete all saved wireless networks</li>
+    <ul>
+      <li>Apple MacOS</li>
+        <ul>
+          <li>Remove all saved access points</li>
+          <li>Restart your laptop</li>
+          <li>(Go ahead and re-add the training WiFi network)</li>
+        </ul>
+      <li>Apple iOS</li>
+        <ul>
+          <li>Remove all saved access points</li>
+          <li>Restart your device</li>
+          <li>Repeat the above steps until old saved access points stop mysteriously reappearing</li>
+          <li>(Go ahead and re-add the training WiFi network)</li>
+        </ul>
+    </ul>    
+  <li>When saving new WiFi networks other than your own, avoid checking the "connect automatically" option</li>
+  <li>Modify the following, so that they do not reveal sensitive information</li>
+    <ul>
+      <li>The name of your home and work WiFi networks</li>
+      <li>The hostname of your computer</li>
+      <li>The hostname of your iOS mobile device(s)</li>
+    </ul>
+  <li>Run the demo again and point out the effectiveness of these mitigation steps</li>
+</ol>
+</td></tr>
+
+<tr><td valign="top">
+<strong>Highlights</strong>
+<ul>
+  <li>Our devices are typically broadcasting at least <em>some</em> information whenever their wireless transmitters are enabled. This sort of <em>data leakage</em> could be a significant risk if your identity, or the fact of your presence in a certain place at a certain time, happen to be sensitive</li>
+  <li>The potentially sensitive data revealed in this demo are typically visible only to those who are <em>either</em> within your device's wireless broadcast range <em>or</em> connected to the same local network</li>
+  <li>To obtain your previous WiFi networks, an attacker just needs to be nearby. To capture your hostname, he needs your WPA password (assuming your network is encrypted). Either way, the attacker does not have to <em>send</em> any data, so he gets to remain "invisible"</li>
+  <li>Apple devices make it particularly easy to obtain this sort of information, but there are other, more obtrusive attacks that work on Windows, Android and Linux devices (among others), so you should consider following the above <em>Mitigation Steps</em> steps even if you do not have a MacBook or an iPhone.</li>
+</ul>
+
+</td><td valign="top">
+<strong>Tips & tricks</strong>
+<ul>
+  <li>If you only want to capture meta-data, like <em>Previous WiFi Networks</em>, you don't have to worry about having devices reconnect to the network while the demo is running (or using the <em>Deauth</em> button mentioned below) and you can ignore the padlocks. These are only relevant to capturing Hostnames and other information that is WPA-encrypted on a secure network.</li>
+  <li>Not all WPA-encrypted traffic will be visible after the first time you have participants reconnect to the network. (Note the red and green padlocks on the left edge of the device entries.) Accordingly, some Apple devices' hostnames may not appear even after they reconnect. Don't worry too much about getting access to <em>all</em> participant traffic, as long as you have enough to illustrate the relevant concepts.
+  <li>At risk of digression, you can attempt to capture additional hostnames by selecting a Wireless adapter (this <em>may</em> work with the same adapter you are using to capture traffic) and clicking the <em>Force deauth using:</em> button.</li>
+  <li> You can use <em>File > Export</em> and <em>File > Import</em> menu options to save a particular demo session for later discussions or follow-up activities</li>
+</ul>
+</td></tr>
+
+<tr><td valign="top" colspan="2">
+<strong>Possible activities</strong>
+<ul>
+  <li><strong><em>Device owner guessing game:</em></strong> If you have enough volunteers willing to reveal their hostnames and Previous WiFi Networks, see how many device entries your participants can match up with their owners. Use the app's "Nickname" column to keep track.</li>
+</ul>
+
+</td></tr>
+</table>
+
+<br />
+<hr />
+
+<a name="2" /><h3>2. &nbsp; How careful are your online services about protecting the confidentiality of your passwords when you sign in?</h3>
+
+<p>This demo reveals the usernames and passwords sent by participants who are connected to the training WiFi network when they attempt to login to <em>HTTP Basic</em> authenticated Web sites that are not protected by HTTPS encryption.</li></p>
+
+<table cellpadding="5" cellspacing="5"><tr><td valign="top">
+<table cellpadding="2" cellspacing="2" frame="box">
+  <tr>
+    <td align="left"><strong>Time</strong></td><td align="right"><em>0:45</em></td>
+  </tr><tr>
+    <td align="left"><strong>Devices</strong></td><td align="right">All</td>
+  </tr><tr>
+    <td align="left"><strong>Networks</strong></td><td align="right">WPA</td>
+  </tr><tr>
+    <td align="left"><strong>Difficulty</strong></td><td align="right">Basic</td>
+  </tr><tr>
+    <td align="left"><strong>Complexity</strong></td><td align="right">Easy</td>
+  </tr>
+</table>
+
+</td><td valign="top">
+  <strong>Setup</strong>
+  <ul>
+    <li>Identify a volunteer before starting the demo. Give him a password to your test site. Write down his MAC address and ask him to disconnect from the training WiFi network</li>
+    <li>Confirm that you have working, HTTPS and non-HTTPS test sites that use <em>HTTP-Basic</em> authentication. Suboptimal possibilities include:</li>
+      <ul>
+        <li><strong><em>&lt;http&gt;</strong></em></li>
+        <li><strong><em>&lt;https&gt;</strong></em></li>
+      </ul>
+    <li>If possible, start the demo running before participants re-enter the room and/or re-open their laptops (see below)</li>
+  </ul>
+</td></tr></table>
+
+<table><tr><td valign="top" colspan="2">
+<strong>Walkthrough</strong>
+<ol>
+  <li>Insert an external, USB WiFi adapter (if necessary) and click the <em>Network Interface</em> <em>Refresh</em> button. Select the WiFi interface with which you will capture traffic. Put the main app window on-projector (unless you are saving it for a "big reveal" later)</li>
+  <li>Select your training WiFi network from the <em>Sniff...</em> menu and enter your WPA key and click the <em>Start</em> button</li>
+  <li>Ask participants to open up their laptops (or invite them back into the training room after a break)</li>
+  <li>When your volunteer participant's device entry shows a green padlock, ask him to login to the test site using the username and password you gave him.</li>
+  <li>Ask your volunteer participant for permission to reveal his credentials (or admit that you created them 20 minutes ago and that, in fact, this is a throwaway password.) Uncheck the anonymity checkbox in the corresponding cell</li>
+  <li>Invite other participants to login to the same URL with random usernames and passwords. <strong>Encourage them <em>not</em> to use any of their real passwords</strong> (and make note of the fact that securely authenticated Web services, by definition, protect successful and unsuccessful login attempts equally). Ask for permission to reveal the credentials used in their login attempts</li>
+  <li><em>Discussion:</em> Discuss the potential security issues, making note of the fact that an attacker in a privileged position on the network (such as a network administrator, ISP or surveillance agency) would <em>not</em> need to know your WPA password, and address increased risk on unencrypted (or WEP-encrypted) WiFi networks</li>
+  <li>Admit that this demo (currently) only works with a particular (relatively uncommon) type of authentication technology, but that everything discussed here applies to other forms of authentication, as well. If there is no encryption, your password is exposed</li>
+  <li><em>Discussion:</em> Discuss encryption, HTTPS, SSL/TLS, etc.</li>
+  <li>Ask at least one participant to connect to an <em>HTTP-Basic</em> authenticated, HTTPS-encrypted Web service and make note of the fact that her password was not revealed.</li>
+</ol>
+</td></tr>
+
+<tr><td valign="top" colspan="2">
+<strong>Mitigation</strong>
+<ol>
+  <li>Avoid services that do not support encryption, especially during login attempts</li>
+  <li>Create unique passwords</li>
+  <li>Use strong WPA password on your home and work networks</li>
+  <li>Install the <em>HTTPS-Everywhere</em> browser extension and use HTTPS bookmarks for important services</li>
+</ol>
+</td></tr>
+
+<tr><td valign="top">
+<strong>Highlights</strong>
+<ul>
+  <li>Do not trust the confidentiality of any password you create for an Intenet service that does not use encryption (HTTPS, SSL, TLS, etc.), especially during login attempts</li>
+  <li>A nearby attacker can see all of your unencrypted traffic, including your passwords, if you are not using WPA or if she knows your WPA password. Either way, the attacker does not have to <em>send</em> any data, so she gets to remain "invisible"</li>
+  <li>This attack is even more dangerous if you use an unencrypted (or <em>WEP</em>) Wireless network</li>
+  <li>An attacker in a privileged position on the network (such as a network administrator, ISP or surveillance agency) would <em>not</em> need to know your WPA password</li>
+</ul>
+
+</td><td valign="top">
+<strong>Tips & tricks</strong>
+<ul>
+  <li>In a pinch, you can use the local wireless access point's Web-based admin interface (at 192.168.1.1 or some such) for your <em>HTTP-Basic</em> authenticated, non-HTTPS test site. If you do, you might consider:
+  <ol>
+    <li>Logging in yourself, using the real admin password, to illustrate the point. (Remember to change it after the demo!)</li>
+    <li>Making note of the fact that services on the Internet are vulnerable, as well, and that you are just using a local service for convenience</li>
+  </ol>
+  <li>Similarly, you can use (or ask participants to try random usernames and passwords on) a known, HTTPS-enabled, <em>HTTP-Basic</em> authenticated service that is more relevant than the test sites suggested above. (Perhaps you work for an organization that has one?)</li>
+  <li>Not all WPA-encrypted traffic will be visible after the first time you have participants reconnect to the network. (Note the red and green padlocks on the left edge of the device entries.) Accordingly, credentials entered on some devices may not appear even if that device has reconnected to the network. Don't worry too much about getting access to <em>all</em> participant traffic, as long as you have enough to illustrate the relevant concepts.
+  <li>At risk of digression, you can attempt to capture traffic (including <em>HTTP-Basic</em> credentials) from additional devices by selecting a Wireless adapter (this <em>may</em> work with the same adapter you are using to capture traffic) and clicking the <em>Force deauth using:</em> button.</li>
+  <li> You can use <em>File > Export</em> and <em>File > Import</em> menu options to save a particular demo session for later discussions or follow-up activities</li>
+</ul>
+</td></tr>
+
+<tr><td valign="top" colspan="2">
+<strong>Possible activities</strong>
+<ul>
+  <li><strong><em>Local wireless access point:</em></strong> If you used a remote service for the demo itself, you can use the local access point's administrative login page page to demonstrate capture of a <em>real</em> password</li>
+  <li><strong><em>Hide your password:</em></strong> Challenge the participants to come up with a way to hide their passwords while signing into an insecure <em>HTTP-Basic</em> authenticated Web site. (VPNs? Tor? Manually entered HTTPS addresses?)</li>
+</ul>
+
+</td></tr>
+</table>
+<br />
+<hr />
+
+</div>
 </body>
 </html>
